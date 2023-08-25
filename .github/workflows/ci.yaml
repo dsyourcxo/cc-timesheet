@@ -33,16 +33,29 @@ jobs:
             ${{ runner.os }}-build-${{ env.cache-name }}-
             ${{ runner.os }}-build-
             ${{ runner.os }}-
+
       - name: Install Dependencies
         if: steps.cache-nodemodules.outputs.cache-hit != 'true'
         run: |
           npm ci
+
       - name: Build
         run: |
           npm run build -- --prod
+
       - name: Lint
         run: |
           npm run lint
+
       - name: Test
         run: |
           npm run test -- --prod
+
+        - name: Deploy to my EC2 instance
+  uses: easingthemes/ssh-deploy@v2.1.5
+  with:
+    SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY}}
+    SOURCE: "dist/tracking/"
+    REMOTE_HOST: "ec2-3-145-102-168.us-east-2.compute.amazonaws.com"
+    REMOTE_USER: "ec2-user."
+    TARGET: "/var/www/html/angular-demo/"
