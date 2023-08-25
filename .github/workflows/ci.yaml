@@ -13,15 +13,13 @@ jobs:
         working-directory: ./
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: "14.x"
-      - uses: actions/cache@v3 # this allows for re-using node_modules caching, making builds a bit faster.
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+      - name: Use node
+  uses: actions/setup-node@v2
+  with:
+    node-version: '12.13.0'
+    check-latest: true
+- name: Install dependencies
+  run: npm ci
 - name: NPM Install
   run: npm install
 - name: NPM Install Angular
