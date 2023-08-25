@@ -1,0 +1,27 @@
+// .main-container{
+//     background-image: url('../assets/Celebrate-Christmas-1024x686.jpg');
+// }
+.divider:after,
+.divider:before {
+content: "";
+flex: 1;
+height: 1px;
+background: #eee;
+}
+.h-custom {
+height: calc(100% - 73px);
+}
+@media (max-width: 450px) {
+.h-custom {
+height: 100%;
+}
+}
+
+div{
+    color: dimgray;
+    font-family: sans-serif;
+}
+
+.img-show{
+    background-image: url('./../assets/ClipartKey_1998616.jpg');
+}

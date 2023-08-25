@@ -1,0 +1,56 @@
+<div id="myModal" class="modal">
+
+    <!-- Modal content -->
+    <div class="modal-content">
+      <h2 class="card-title" style="text-align: start;">Material Update Sheet</h2>
+      <p style="text-align: start;">In case of maintenance, please add only inventory that was used extra.</p>
+        <table class="table table-bordered table-sm" *ngIf="!showRemovalTable">
+            <thead>
+              <tr>
+                <th scope="col">Material Name</th>
+                <th scope="col">Estimated Quantity</th>
+                <th scope="col">Installed Till date</th>
+                <th scope="col">Installed Today<span style="color: red;">*</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let m of data;let i = index">
+                <th>{{m.material.name}}</th>
+                <td>{{m.estimated}}</td>
+                <td>{{m.actual}}</td>
+                <td><input class="form-control input-sm" type="number" min="1" [(ngModel)]="m.todayHoursSpent" (change)="validate(i)"></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <table class="table table-bordered table-sm" *ngIf="showRemovalTable">
+            <thead>
+              <tr>
+                <th scope="col">Material Name</th>
+                <th scope="col">Installed Quantity</th>
+                <th scope="col">Removed Till date</th>
+                <th scope="col">Removed Today <span style="color: red;">*</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let m of data;let i = index">
+                <th>{{m.material.name}}</th>
+                <td>{{m.actual}}</td>
+                <td>{{m.removed}}</td>
+                <td><input class="form-control input-sm" type="number" min="1" [(ngModel)]="m.todaysRemoved" (change)="validate(i)"></td>
+              </tr>
+            </tbody>
+          </table>
+        <div class="row">
+            <div class="col-lg-4">
+            </div>
+            <div class="col-lg-4">
+                <button class="btn btn-sm m-1 btn-success" (click)="onMaterialDone()">Done</button>
+    <button class="btn btn-sm m-1 btn-danger" (click)="onMaterialCancel()">Cancel</button>
+            </div>
+            <div class="col-lg-4">
+            </div>
+        </div>
+    
+    </div>
+  </div>

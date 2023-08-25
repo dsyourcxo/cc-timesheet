@@ -1,0 +1,70 @@
+<section class="vh-100" *ngIf="selectedTab=='' && !isLoading">
+  <div class="container-fluid h-custom">
+    <div style="width: 100%;text-align: center;"><h1>Welcome to Project Management and Progress Tracking</h1></div>
+    <div class="row d-flex justify-content-center align-items-center h-100">
+      <div class="col-md-9 col-lg-6 col-xl-5">
+        <img src="./assets/ClipartKey_1998616.jpg"
+          class="img-fluid" alt="Sample image">
+      </div>
+      <div class="col-md-8 col-lg-6 col-xl-4 offset-xl-1">
+        <form>
+          <div class="d-flex flex-row align-items-center justify-content-center justify-content-lg-start">
+            <p class="lead fw-normal mb-0 me-3">Choose Your Name</p>
+          </div>
+
+          <!-- Password input -->
+          <div class="form-outline mb-3">
+            <select class="form-control form-control-lg" name="projects" id="projects" [(ngModel)]="userName" (change)=" onUserNameChange()">
+              <option *ngFor="let name of crewManagers" [ngValue]="name">{{name}}</option>
+            </select>
+          </div>
+          <div class="text-center text-lg-start mt-4 pt-2">
+            <button style="padding-left: 2.5rem; padding-right: 2.5rem;" [disabled]="!isUserPresent" class="btn btn-primary btn-lg" (click)="selectedTab='timesheet-update'">Timesheet Update</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- <div class="mt-2">
+  <div class="text-center">
+    
+    
+  </div>
+</div>
+<div *ngIf="!isLoading">
+<app-navbar></app-navbar>
+<div>
+<div class="m-5">
+  <div class="row" *ngIf="selectedTab==''">
+    <div class="col-lg-3" style="margin-top: 15%;"></div>
+    <h1>Welcome to Project Management and Progress Tracking</h1>
+    <button class="btn btn-primary col-lg-3 m-1" (click)="selectedTab='material-consumed-update'">Material Consumed Update</button>
+    <div><label><h6>Enter your Name</h6></label></div>
+    <div><select class="form-control input-sm" name="projects" id="projects" [(ngModel)]="userName" (change)=" onUserNameChange()">
+      <option *ngFor="let name of crewManagers" [ngValue]="name">{{name}}</option>
+    </select></div>
+    
+    <div><button [disabled]="!isUserPresent" class="btn btn-primary col-lg-3 m-1" (click)="selectedTab='timesheet-update'">Timesheet Update</button>
+    </div>
+  </div>
+  
+</div>
+</div>
+<div>
+<app-material-consumed-update 
+*ngIf="selectedTab=='material-consumed-update'"
+[user]="user"
+[data]="data"></app-material-consumed-update>
+<app-timesheet-update 
+*ngIf="selectedTab=='timesheet-update'"
+[data]="data" [userName]="userName"></app-timesheet-update>
+</div>
+</div> -->
+<div>
+<app-timesheet-update 
+*ngIf="selectedTab=='timesheet-update'"
+[data]="data" [userName]="userName"></app-timesheet-update>
+</div>
+
+<app-loader *ngIf="isLoading"></app-loader>

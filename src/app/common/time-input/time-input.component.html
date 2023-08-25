@@ -1,0 +1,20 @@
+<div style="display: inline-flex;">
+<select class="form-control" [(ngModel)]="hour" *ngIf="isMaridianTime" (change)="onTimeChange()">
+    <option *ngFor="let hr of hourArray">
+        {{hr}}
+    </option>
+</select>
+<select class="form-control" [(ngModel)]="min" (change)="onTimeChange()">
+    <option *ngFor="let mn of minArray">
+        {{mn}}
+    </option>
+</select>
+<!-- <select class="form-control" [(ngModel)]="meridian" *ngIf="isMaridianTime" (change)="onTimeChange()">
+    <option>
+        AM
+    </option>
+    <option>
+        PM
+    </option>
+</select> -->
+</div>
