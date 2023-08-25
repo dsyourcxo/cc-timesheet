@@ -12,8 +12,8 @@ jobs:
       run:
         working-directory: ./
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
         with:
           node-version: "12.x"
       - uses: actions/cache@v3 # this allows for re-using node_modules caching, making builds a bit faster.
