@@ -1,56 +1,43 @@
-name: Angular GitHub CI
+name: CI
 on:
-  push:
+ push:
     branches:
       - main
-
 jobs:
   ci:
+    # using Ubuntu
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [10.x, 12.x]
-
+    defaults:
+      run:
+        working-directory: ./
     steps:
-      - uses: actions/checkout@v2
-
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: Cache node modules
-        id: cache-nodemodules
-        uses: actions/cache@v2
-        env:
-          cache-name: cache-node-modules
+          node-version: "14.x"
+      - uses: actions/cache@v3 # this allows for re-using node_modules caching, making builds a bit faster.
         with:
-          # caching node_modules
-          path: node_modules
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
-      - name: Install Dependencies
-        if: steps.cache-nodemodules.outputs.cache-hit != 'true'
-        run: |
-          npm ci
-      - name: Build
-        run: |
-          npm run build -- --prod
-      - name: Lint
-        run: |
-          npm run lint
-      - name: Test
-        run: |
-          npm run test -- --prod
-        
-       - name: Deploy to my EC2 instance
-        uses: easingthemes/ssh-deploy@v2.1.5
-
-         with:
+            ${{ runner.os }}-node-
+- name: NPM Install
+  run: npm install
+- name: NPM Install Angular
+  run: npm install -g @angular/cli > /dev/null
+- name: Lint
+  run: npm run lint
+- name: Format
+  run: npm run format
+- name: NPM build Angular Production
+  run: npm run build:prod
+- name: Test
+  run: npm run test:ci
+- name: Test coverage
+  run: npm run test:ci:cov
+- name: Deploy to my EC2 instance
+  uses: easingthemes/ssh-deploy@v2.1.5
+  with:
     SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY}}
     SOURCE: "dist/tracking/"
     REMOTE_HOST: "ec2-3-145-102-168.us-east-2.compute.amazonaws.com"
