@@ -1,9 +1,9 @@
 import { formatDate } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
-import { read } from 'fs';
-import { groupBy, map, mergeMap, of, pipe, reduce, toArray, zip } from 'rxjs';
 import { Item, ModalData } from 'src/app/common/models/board';
+import { Timesheet } from 'src/app/common/models/timesheet';
+import { TimesheetRow } from 'src/app/common/models/timesheet-row';
 import { GoogleSheetsServiceService } from 'src/app/services/google-sheets-service.service';
 import { TimesheetService } from 'src/app/services/timesheet.service';
 import Swal from 'sweetalert2';
@@ -40,9 +40,9 @@ export class TimesheetUpdateComponent implements OnInit,OnChanges{
   openMaterialModal : string = '';
 
   colunms:String[] = [
-    "Actions",
+"Actions",
 "Select Project",
-"Select Group",
+"Task Type",
 "Select Task",
 "Estimated Time",
 "Time Spent till date",
@@ -51,12 +51,9 @@ export class TimesheetUpdateComponent implements OnInit,OnChanges{
 "Man Hours Spent",
 "Material Count",
 "Mark Completed",
-"Comments",
-"Upload Image"
+"Comments"
   ];
 
-  availabeColunms:String[] = [
-      ];
   items:  Map<string,any[]> = new Map();
 
   validation = {
@@ -68,53 +65,13 @@ export class TimesheetUpdateComponent implements OnInit,OnChanges{
   }
 
 
-  rows: any[] = [];
-  timesheet = {
-    selectedCrew : '',
-    date: null,
-    checkInTime : null,
-    checkOutTime : null,
-    breakDuration : null,
-    netShiftHours : 0,
-    totalHoursSpent : 0,
-    empAndTime : new Map<string,number>(),
-    rows : this.rows,
-    userName : ''
-  }
+  rows: TimesheetRow[] = [];
+  timesheet :Timesheet = new Timesheet();
   crewType: any;
-  emps: Map<number,any[]> = new Map();
   
-  row : any = {
-    project : null,
-    selectedProjectId :  null,
-    itemGroupMap : new Map(),
-    selectedItem : null,
-    selectGroup : null,
-    taskStatus : null,
-    estimatedTime : null,
-    timeSpentTillDate : null,
-    activityType : null,
-    comment : null,
-    manHoursSpent : null,
-    labours : [],
-    materialDetails : null,
-    activityArray : [],
-    statusCheckBox : '',
-    isStatusCheckBox : false,
-    showMarkCompletedCol : false,
-    items: <any[]>[],
-    isMaterialFilled : false,
-    actualActivityType : null,
-    isComment : true,
-    isManhourSpent : true,
-    isLabours : true,
-    groups : [],
-    selectedImage : null,
-    selectedImageBinary : null,
-    date : formatDate(new Date,'yyyy-MM-dd','en-US')
-  }
+  row : TimesheetRow = new TimesheetRow();
 
-  activityDropDownValues : any[] = ['Programming','Removal','Installation','Maintenance','Warehouse'];
+  activityDropDownValues : any[] = ['Maintenance at Site'];
   labourAndHours: any = {
     totalTime : 0,
     empName : ''
@@ -131,14 +88,17 @@ export class TimesheetUpdateComponent implements OnInit,OnChanges{
   rowLoading: boolean = false;
   isUpdating: boolean = false;
 
-  constructor(private http: HttpClient,private timesheetService : TimesheetService,public googleSheetService : GoogleSheetsServiceService) {
-
+  constructor(
+    private http: HttpClient,
+    private timesheetService : TimesheetService,
+    public googleSheetService : GoogleSheetsServiceService) {
+    this.timesheet.userName = this.userName;
     this.timesheetService.isloader.subscribe(x=>{
       this.isLoading = x;
     });
 
     this.isLoading = true;
-   this.timesheetService.ProjectBoardApi().subscribe((x : any)=>{
+    this.timesheetService.ProjectBoardApi().subscribe((x : any)=>{
         this.projects = x.data.folders[0].children;
         this.isLoading = false;
       });
@@ -148,10 +108,12 @@ export class TimesheetUpdateComponent implements OnInit,OnChanges{
   }
 
   ngOnInit(): void {
+
     if(this.data?.data?.boards && this.data.data?.boards[0].items){
       this.data.data?.boards[0].items.forEach(item=>{item.column_values?.forEach(x=>{
         
         if(x.title == "Crew Name"){
+          if(x.text?.includes("Crew")){
           let emp = this.crewMap.get(x.text??'')??[];
           const listEmp = {
             isSelected : false,
@@ -160,6 +122,7 @@ export class TimesheetUpdateComponent implements OnInit,OnChanges{
           emp.push(listEmp);
           this.crewMap.set(x.text??'',emp);
         }
+      }
     });
       })
     }
@@ -169,7 +132,7 @@ export class TimesheetUpdateComponent implements OnInit,OnChanges{
 
   selectedProject(index : number){
 
-    this.rows[index].selectedGroup = null;
+    this.rows[index].selectGroup = null;
     this.rows[index].selectedItem = null;
     this.rows[index].itemGroupMap = new Map();
     this.rows[index].items = [];
@@ -182,7 +145,7 @@ export class TimesheetUpdateComponent implements OnInit,OnChanges{
        })
     };
   
-        let query1 = "{ boards (ids:"+this.rows[index].project.id+") { name id description board_folder_id items { name id column_values { title id type text} group { id title }} } }";
+        let query1 = "{ boards (ids:"+this.rows[index].project?.id+") { name id description board_folder_id items { name id column_values { title id type text} group { id title }} } }";
         let body = JSON.stringify({
           'query' : query1
         });
@@ -197,33 +160,21 @@ export class TimesheetUpdateComponent implements OnInit,OnChanges{
                 this.rows[index].itemGroupMap.set(item.group.title??'',items);
               });
               this.rows[index].groups = Array.from(this.rows[index].itemGroupMap.keys());
-              console.log(this.rows[index].groups);
-              // this.rowLoading = false;
-            }    // this.rows[index].items = Array.from(this.data.data?.boards[0].items);
+            }
         });
      }
 
      selectedGroup(index:number){
       this.rows[index].selectedItem = null;
-      this.rows[index].items = this.rows[index].itemGroupMap.get(this.rows[index].selectedGroup);
+      this.rows[index].items = this.rows[index].itemGroupMap.get(this.rows[index].selectGroup) as Item[];
      }
 
-     selectedTask(index:number){
+     public selectedTask(index:number){
       this.isLoadingTask = true;
-      const httpOptions = {
-        headers: new HttpHeaders({
-          'Content-Type': 'application/json',
-          'Authorization' : localStorage.getItem("token")??''
-         })
-      };
-          let query1 = "{ items (ids:"+this.rows[index].selectedItem?.id+") {  name id column_values { title id type text} subitems { id name column_values { title id text} board{id}} } }";
-          let body = JSON.stringify({
-            'query' : query1
-          });
-
-          this.http.post('https://api.monday.com/v2',body , httpOptions).subscribe((x : any)=>{
+    
+         this.timesheetService.TaskItemApi(this.rows[index].selectedItem?.id).subscribe((x : any)=>{
             this.rows[index].materialDetails = [];
-            this.rows[index].selectedItem.id,x.data.items[0].subitems.forEach((x:any)=>{
+            this.rows[index].selectedItem?.id,x.data.items[0].subitems.forEach((x:any)=>{
                 if(x.name == "Installation" || x.name == "Maintenance" || x.name == "Removal"){
                   this.rows[index].activityArray.push(x);
                 }else{
@@ -238,102 +189,73 @@ export class TimesheetUpdateComponent implements OnInit,OnChanges{
                   this.rows[index].materialDetails.push(obj);
                 }
             });
-            // this.data = x as ModalData;
-            // if(this.data?.data?.boards && this.data.data?.boards[0].items){
-            //       this.items.set(this.row.project.name , this.data.data?.boards[0].items);
-            // }
 
-            this.rows[index].estimatedTime = this.sum(this.rows[index].selectedItem?.column_values?.find((x:any)=>x.title=="Est Hours")?.text.split(","));
-            this.rows[index].timeSpentTillDate = this.sum(this.rows[index].selectedItem?.column_values?.find((x:any)=>x.title=="Actual Hours")?.text.split(","));
+            this.rows[index].estimatedTime = this.sum(this.rows[index]?.selectedItem?.column_values?.find((x:any)=>x.title=="Est Hours")?.text!.split(","));
+            this.rows[index].timeSpentTillDate = this.sum(this.rows[index].selectedItem?.column_values?.find((x:any)=>x.title=="Actual Hours")?.text!.split(","));
             this.rows[index].activityType = this.rows[index].selectedItem?.column_values?.find((x:any)=>x.title=="Activity")?.text;
             this.rows[index].actualActivityType = this.rows[index].activityType;
-            if(this.rows[index].activityType?.includes("Installation to Start") || this.rows[index].activityType?.includes("Installation WIP")){
+            if(this.rows[index].activityType?.includes("Installation to Start") || this.rows[index].activityType?.includes("Installation WIP") || this.rows[index].activityType?.includes("Installation In Progress")){
               this.rows[index].statusCheckBox = "Installation Completed";
               this.rows[index].showMarkCompletedCol = true;
             }
   
-            if(this.rows[index].activityType?.includes("Removal to Start") || this.rows[index].activityType?.includes("Removal WIP")){
+            if(this.rows[index].activityType?.includes("Removal to Start") || this.rows[index].activityType?.includes("Removal WIP") || this.rows[index].activityType?.includes("Removal In Progress")){
               this.rows[index].statusCheckBox = "Removal Completed";
               this.rows[index].showMarkCompletedCol = true;
             }
 
             this.isLoadingTask = false;
           });
-
-          // this.row.taskStatus = this.row.selectedItem?.column_values?.find((x:any)=>x.title=="Status")?.text;
      }
 
-     onCrewSelect(val : any){
+     public onCrewSelect(val : any){
       this.crewMap.get(this.timesheet.selectedCrew);
      }
 
-     onModelClose(event: any){
+     public onModelClose(event: any){
       this.isModalOpen = false;
       if(this.rows[this.rowIndex] != undefined)
       this.rows[this.rowIndex].labours = event.list?.filter((x:any)=>{ if(x.isSelected) return Object.assign({},x)});
       // this.rows[index].labours = this.crewMap.get(this.timesheet.selectedCrew)?.filter((x:any)=>{ if(x.isSelected) return Object.assign({},x)});
-      
       if(this.rows[this.rowIndex].manHoursSpent > 0)
            this.onHoursSpentChange()
      }
 
-     addRow(){
-      this.row = {
-        project : null,
-        itemGroupMap : new Map(),
-        selectedProjectId :  null,
-        selectedItem : null, 
-        selectGroup : null,
-        taskStatus : null,
-        estimatedTime : null,
-        timeSpentTillDate : null,
-        activityType : null,
-        comment : null,
-        manHoursSpent : null,
-        labours : [],
-        materialDetails : [],
-        activityArray : [],
-    statusCheckBox : '',
-    isStatusCheckBox : false,
-    showMarkCompletedCol : false,
-    items: <any[]>[],
-    isMaterialFilled : false,
-    actualActivityType : null,
-    isComment : true,
-      isManhourSpent : true,
-      isLabours : true,
-      groups : [],
-      selectedImage : null,
-      selectedImageBinary : null,
-      date : formatDate(new Date,'yyyy-MM-dd','en-US')
-      }
-
+    public addRow(){
+      this.row = new TimesheetRow();
       this.rows.push((Object.assign({},this.row)));
      }
 
-     onHoursSpentChange(){
+     public onHoursSpentChange(){
       this.timesheet.empAndTime = new Map();
+      this.timesheet.totalHoursSpent = 0;
       this.rows.forEach(r=>{
         if(r.manHoursSpent > -1){
         r.labours?.forEach((e:any)=>{
 
-          let time = r.manHoursSpent/r.labours.length;
+          let time = r.manHoursSpent*60/r.labours.length;
 
-        time = parseFloat(parseFloat(time.toString()).toFixed(2));
+        // time = parseFloat(parseFloat(time.toString()).toFixed(2));
           if(this.timesheet.empAndTime.get(e.empObject.name)){
             time = time + this.timesheet.empAndTime.get(e.empObject.name)!;
             this.timesheet.empAndTime.set(e.empObject.name,time);
           }else{
             this.timesheet.empAndTime.set(e.empObject.name,time);
           }
+
+        let parsedTime  = parseInt((time/60).toString());
+        parsedTime = parseFloat((parsedTime +'.'+(time%60)));
+        this.timesheet.empAndTime.set(e.empObject.name,parseFloat((parsedTime.toFixed(2))));
         });
+
+        this.timesheet.totalHoursSpent = this.timesheet.totalHoursSpent  +  r.manHoursSpent;
       }else{
         alert("Man Hour Spent Should Be Positive Number");
         r.manHoursSpent = 0;
       }
       });
 
-      this.timesheet.totalHoursSpent = 0;
+     
       let totalnetShift = this.timesheet.netShiftHours;
       this.diffInShiftHours = 0;
       this.timesheet.rows.forEach(x=>{
@@ -347,8 +269,6 @@ export class TimesheetUpdateComponent implements OnInit,OnChanges{
         totalnetShift = this.laboursArray.length * totalnetShift;
 
         this.diffInShiftHours =  (this.timesheet.totalHoursSpent*60) - totalnetShift;
-
-        console.log(this.diffInShiftHours);
 
         let time  = parseInt((totalnetShift/60).toString());
 
@@ -366,22 +286,15 @@ export class TimesheetUpdateComponent implements OnInit,OnChanges{
         time  = parseInt((this.diffInShiftHours/60).toString());
         time = parseFloat((time +'.'+(this.diffInShiftHours%60)));
         }
-
         this.diffInShiftHours = time;
 
-        // if(this.timesheet.netShiftHours>(this.timesheet.totalHoursSpent*60)){
-        //   this.diffInShiftHours = -1*time;
-        // }
-
         this.diffInShiftHours = parseFloat(parseFloat(this.diffInShiftHours.toString()).toFixed(2));
-        console.log(this.diffInShiftHours);
     }
 
      materialModelAction(val:any,index:any){
       this.rows[index].materialDetails = val;
       this.openMaterialModal = '';
       this.rows[index].materialDetails.forEach((x:any)=>{
-        console.log(x);
         if(x.todaysRemoved > -1 && x.todaysRemoved != null || x.todayHoursSpent>-1 && x.todayHoursSpent!=null){
           this.rows[index].isMaterialFilled = true;
         }else{
@@ -390,10 +303,6 @@ export class TimesheetUpdateComponent implements OnInit,OnChanges{
         
       });
       
-     }
-
-     onTimeSpent(val:any,i:number){
-        this.rows[i].manHoursSpent = parseInt(val);;
      }
 
      onTimeChange(val:any,inputLabel : any){
@@ -421,8 +330,6 @@ export class TimesheetUpdateComponent implements OnInit,OnChanges{
           diff = (checkOut - checkIn)-breakDur;
          }
 
-        // diff = (checkOut - checkIn)-breakDur;
-        console.log(diff);
          this.timesheet.netShiftHours = diff;
         }
 
@@ -432,16 +339,20 @@ export class TimesheetUpdateComponent implements OnInit,OnChanges{
      openModal(num:number){
       this.rowIndex = num;
       if(this.rows[num].labours?.length < 1){
-        let resetlist = this.crewMap.get(this.crewType)?.map((x:any)=>{ x.isSelected=false; return Object.assign({},x)});
-        if(resetlist != undefined)
-          this.crewMap.set(this.crewType,resetlist);
-      }else{
-        this.crewMap.set(this.crewType,this.rows[num].labours);
-      }  
+        let resetlist = this.crewMap.get(this.timesheet.selectedCrew)?.map((x:any)=>{ 
+          x.isSelected=false; 
+          return Object.assign({},x)
+        });
+        if(resetlist != undefined){
+          this.rows[num].deflautlabours = resetlist.map((x:any)=>{ 
+            return Object.assign({},x)
+          });;
+        }
+      }
       this.isModalOpen = true;
      }
 
-     onSubmit(){
+    public onSubmit(){
       this.error = false;
       let errorText = "Please fill out mendatory fields";
       this.rows.forEach(x=>{
@@ -483,24 +394,14 @@ export class TimesheetUpdateComponent implements OnInit,OnChanges{
       this.timesheetService.PostForActivity(this.timesheet);
       this.timesheetService.PostForActivityUpdate(this.timesheet);
       this.timesheetService.PostForMaterial(this.timesheet);
-      this.timesheetService.uploadImage(this.timesheet);
+
+      
+      this.googleSheetService.uploadFile(this.timesheet.selectedImage,this.timesheet);
       this.timesheetService.makeCall();
 
       this.googleSheetService.makeCall(this.timesheet);
-      this.rows = [];
-      this.timesheet = {
-        selectedCrew : '',
-        date: null,
-        checkInTime : null,
-        checkOutTime : null,
-        breakDuration : null,
-        netShiftHours : 1,
-        totalHoursSpent : 0,
-        empAndTime : new Map<string,number>(),
-        rows : [],
-        userName : this.userName,
-      };
-
+      this.rows = <TimesheetRow[]>[];
+      this.timesheet = new Timesheet();
       this.addRow();
     }
     }else{
@@ -513,9 +414,9 @@ export class TimesheetUpdateComponent implements OnInit,OnChanges{
     }
      }
 
-     sum(val : string[]){
+     sum(val : string[] | undefined | null){
       let total = 0;
-      val.forEach(x=>{
+      val?.forEach(x=>{
         total = total + parseInt(x);
       });
       return total;
@@ -542,6 +443,9 @@ export class TimesheetUpdateComponent implements OnInit,OnChanges{
 
    duplicateRow(val : number){
     this.rows.push(Object.assign({},this.rows[val]));
+    this.rows[val+1].deflautlabours=this.rows[val].deflautlabours.map((x:any)=>{ 
+      return Object.assign({},x)
+    });
     this.onHoursSpentChange();
    }
 
@@ -567,8 +471,28 @@ export class TimesheetUpdateComponent implements OnInit,OnChanges{
    }
   }
 
-  onImageSelected(event: Event,i : number) {
+  onImageSelected(event: Event) {
     const fileInput = event.target as HTMLInputElement;
-    this.rows[i].selectedImage = fileInput.files![0];
+    this.timesheet.selectedImage = fileInput.files![0];
+  }
+
+  makeProperTime(val : string){
+    let isMinus = false;
+    if(val[0] == '-'){
+      isMinus = true;
+      val = val.replace('-','');
+    }
+    let array = val.split(":");
+    if(array[0]?.length == 2 && array[1]?.length == 1)
+      val = val+0;
+    else if(array[0]?.length == 1 && array[1]?.length == 1)
+      val = val+0;
+    else if(array?.length <2)
+      val = val+":00";
+
+    if(isMinus)
+      val = "-" + val;
+
+      return val;
   }
   }

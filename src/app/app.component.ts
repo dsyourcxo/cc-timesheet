@@ -19,7 +19,7 @@ export class AppComponent implements OnInit{
   apiTokenKey : string | null = null;
 
   // monday = mondaySdk();
-  user : User | null = null;
+  user : any = null;
   isAuthTokenAvailable : boolean = false;
   isLoading : boolean = false;
   data : ModalData | null= null;
@@ -42,8 +42,10 @@ export class AppComponent implements OnInit{
       if(this.data.data?.boards && this.data.data?.boards[0].items){
           this.data.data?.boards[0].items.forEach(item=>{item.column_values?.forEach(x=>{
             
-            if(x.title == "Position"){
-              if(x.text == 'Crew Managers' || x.text == 'Virtual Operations Manager' || x.text == 'Admin'){
+            // if(x.title == "Position"){
+            //   if(x.text == 'Crew Managers' || x.text == 'Virtual Operations Manager' || x.text == 'Admin'){
+                if(x.title == "Show on Landing Page"){
+                  if(x.text == 'Yes'){
                 this.crewManagers.push(item.name);
               }
             }
@@ -68,6 +70,7 @@ export class AppComponent implements OnInit{
     }
   else{
     this.isUserPresent = true;
+    localStorage.setItem("user",this.userName);
   }
   }
   

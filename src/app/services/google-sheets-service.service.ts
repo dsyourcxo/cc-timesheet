@@ -1,3 +1,4 @@
+import { formatDate } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { time } from 'console';
@@ -39,19 +40,16 @@ export class GoogleSheetsServiceService {
     });
 
   }
-  private materialValueArray : any[][] = [];
   
-  private valueArray: any[][] = [];
-
-  private fileValueArray: any[][] = [];
 
   async sendDataToSheet(timesheet: any): Promise<void> {
 
     let array = [];
     
     let materialArray : any[] = [];
-
-    let fileArray : any[] = [];
+   let materialValueArray : any[][] = [];
+  
+   let valueArray: any[][] = [];
 
     const httpOptions = {
       headers: new HttpHeaders({
@@ -62,9 +60,6 @@ export class GoogleSheetsServiceService {
 
     await timesheet.rows.forEach((row: any) => {
 
-      fileArray = [row.date,timesheet.selectedCrew,row.selectedImage.name,'/Uploaded Files from Monday'];
-      this.fileValueArray.push(fileArray);
-
       row.materialDetails.forEach((m:any)=>{
         if(isNaN(m.actual)){
           m.actual = 0;
@@ -73,8 +68,8 @@ export class GoogleSheetsServiceService {
           m.removed = 0;
         }
 
-        materialArray=[row.project.name,timesheet.date,row.selectedItem.name,timesheet.selectedCrew,m.name,m.todayHoursSpent,m.todaysRemoved];
-        this.materialValueArray.push(materialArray);
+        materialArray=[row.project.name,timesheet.date,row.selectedItem.name,timesheet.selectedCrew,m.material.name,m.todayHoursSpent,m.todaysRemoved];
+        materialValueArray.push(materialArray);
       });
   
       // {"Project Name" :"`+ row.project.name+`",`+
@@ -85,9 +80,9 @@ export class GoogleSheetsServiceService {
 
         array = [row.project.name, timesheet.selectedCrew, labName.empObject.name
           , row.selectedItem.name, row.activityType, timesheet.date, timesheet.checkInTime, timesheet.checkOutTime, timesheet.empAndTime.get(labName.empObject.name)
-          ,row.comment,timesheet.userName];
+          ,row.comment,localStorage.getItem("user")];
 
-        this.valueArray.push(array);
+        valueArray.push(array);
       });
 
      
@@ -95,36 +90,26 @@ export class GoogleSheetsServiceService {
       let body1 = {
         range: "Time_Sheet!A2:K",
         majorDimension: "ROWS",
-        values: this.valueArray
+        values: valueArray
       }
 
       let body2 = {
         range: "Material_Consumption!A2:G",
         majorDimension: "ROWS",
-        values: this.materialValueArray
+        values: materialValueArray
       }
 
       this.http.post(this.url, body1, httpOptions).subscribe((y: any) => {});
       this.http.post(this.url2, body2, httpOptions).subscribe((y: any) => {});
     });
-
-    let body3 = {
-      range: "Timesheet_files!A2:D",
-      majorDimension: "ROWS",
-      values: this.fileValueArray
-    }
-
-    this.http.post(this.url3, body3, httpOptions).subscribe((y: any) => {});
   }
 
-  makeCall(timesheet: any){
-  
-    
+   public makeCall(timesheet: any){
     this.sendDataToSheet(timesheet);
   }
 
   
-  uploadFile(file: File) {
+  public uploadFile(file: File,timesheet : any) {
     const headers = new HttpHeaders({
       "Authorization": `Bearer `+localStorage.getItem('token_google'),
       "Access-Control-Allow-Origin": "*"
@@ -138,6 +123,8 @@ export class GoogleSheetsServiceService {
       parents: ['1V70v6xknjtCAEqo0Vwb3UbB_Dry0SU9W']
     };
 
+    let fileArray = [[formatDate(new Date,'yyyy-MM-dd','en-US'),localStorage.getItem("user"),timesheet.selectedImage.name,'https://drive.google.com/drive/folders/1V70v6xknjtCAEqo0Vwb3UbB_Dry0SU9W']];
+
     const formData = new FormData();
     formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
     formData.append('file', file);
@@ -150,6 +137,22 @@ export class GoogleSheetsServiceService {
         console.error('File upload error:', error);
       }
     );
+
+    const httpOptions = {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+      'Authorization': "Bearer "+ localStorage.getItem('token_google')
+      })
+    };
+
+    
+    let body3 = {
+      range: "Timesheet_files!A2:D",
+      majorDimension: "ROWS",
+      values: fileArray
+    }
+
+    this.http.post(this.url3, body3, httpOptions).subscribe((y: any) => {});
   }
 }
 }

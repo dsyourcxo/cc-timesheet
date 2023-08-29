@@ -15,7 +15,7 @@ export class TimeInputComponent implements OnInit {
  min : string = '00';
 
  @Input()
- isMaridianTime = true;
+ isMaridianTime = false;
 
  @Input()
  hourLength = 24;
@@ -44,8 +44,6 @@ export class TimeInputComponent implements OnInit {
 
     if(!this.isMaridianTime){
       this.minLength = this.minLength +61;
-    }
-
       for(let i=0;i<this.minLength;){
         let num='';
         if(i<10){
@@ -56,6 +54,20 @@ export class TimeInputComponent implements OnInit {
           this.minArray.push(num);
           i=i+30;
       }
+    }else{
+      for(let i=0;i<this.minLength;){
+        let num='';
+        if(i<10){
+          num = "0"+i;
+        }else{
+        num = ""+i;
+        }
+          this.minArray.push(num);
+          i=i+15;
+      }
+    }
+
+      
   }
 
   onTimeChange(){

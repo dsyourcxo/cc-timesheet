@@ -26,7 +26,9 @@
     <div class="card-body p-0 ">
       <p class="card-title">CheckIn Time<span class="required">{{' *'}}</span></p>
       <div [ngClass]="timesheet.checkInTime == null && error?'isRequired':''">
-        <app-time-input  (totalTime)="onTimeChange($event,'CheckIn')"></app-time-input></div>
+        <app-time-input  
+        [isMaridianTime]="true"
+        (totalTime)="onTimeChange($event,'CheckIn')"></app-time-input></div>
   <p style="color: red;font-size: 12px;" *ngIf="timesheet.checkInTime == null && error?'isRequired':''">
       CheckIn Time is required.
     </p>
@@ -37,6 +39,7 @@
       <p class="card-title">CheckOut Time<span class="required">{{' *'}}</span></p>
 <div [ngClass]="timesheet.checkOutTime == null && error?'isRequired':''">
   <app-time-input
+  [isMaridianTime]="true"
    (totalTime)="onTimeChange($event,'CheckOut')"></app-time-input></div>
    <p style="color: red;font-size: 12px;" *ngIf="timesheet.checkOutTime == null && error?'isRequired':''">
       CheckOut Time is required
@@ -48,7 +51,6 @@
       <p class="card-title">Break Duration(Mins)<span class="required">{{' *'}}</span></p>
 <div [ngClass]="timesheet.breakDuration == null && error?'isRequired':''">
   <app-time-input 
-  [isMaridianTime]="false"
   [hourLength]=0
   (totalTime)="onTimeChange($event,'Break')"></app-time-input></div>
     <p style="color: red;font-size: 12px;" *ngIf="timesheet.breakDuration == null && error">
@@ -87,17 +89,17 @@
                   <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true" style="margin-bottom: 13px;"></span>
                   <div></div>
                 </button>
-                  <select class="form-control input-sm" name="group" *ngIf="rw.project != null" [(ngModel)]="rw.selectedGroup" (change)="selectedGroup(i)">
+                  <select class="form-control input-sm" name="group" *ngIf="rw.project != null" [(ngModel)]="rw.selectGroup" (change)="selectedGroup(i)">
                     <option *ngFor="let group of rw.groups" [ngValue]="group">{{group}}</option>
                 </select>
             </td>
               <td>
                 <button class="btn btn-primary" type="button" disabled style="width: 100%;
-                height: 29px;" *ngIf="rw.selectedGroup == null">
+                height: 29px;" *ngIf="rw.selectGroup == null">
                   <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true" style="margin-bottom: 13px;"></span>
                   <div></div>
                 </button>
-                  <select class="form-control input-sm" *ngIf="rw.items.length>0 && rw.selectedGroup != null" name="item" [(ngModel)]="rw.selectedItem" (change)="selectedTask(i)">
+                  <select class="form-control input-sm" *ngIf="rw.items.length>0 && rw.selectGroup != null" name="item" [(ngModel)]="rw.selectedItem" (change)="selectedTask(i)">
                       <option *ngFor="let item of rw.items" [ngValue]="item">{{item.name}}</option>
                   </select>
               </td>
@@ -129,24 +131,24 @@
                   {{rw.actualActivityType}}
                 </div>
           <select class="form-control input-sm" name="comments" *ngIf="rw.items.length>0 &&  !isLoadingTask && rw.selectedItem != null && rw.actualActivityType != 'Maintenance at Site'" [(ngModel)]="rw.activityType">
-            <option>Maintenance at Site</option>
+            <option *ngFor="let act of activityDropDownValues">{{act}}</option>
             <option>{{rw.actualActivityType}}</option>
         </select>
       </td>
-      <td [ngClass]="rw.labours?.length < 1 && error?'isRequired':''">
+      <td [ngClass]="rw.labours.length < 1 && error?'isRequired':''">
         <button class="btn btn-primary" type="button" disabled style="width: 100%;
                 height: 29px;" *ngIf="isLoadingTask ||  rw.selectedItem == null">
                   <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true" style="margin-bottom: 13px;"></span>
                   <div></div>
                 </button>
                 <div *ngIf=" !isLoadingTask&& rw.selectedItem != null">
-        <i *ngIf="rw.labours?.length < 1" class="bi bi-view-stacked" (click)="copyLabours(i)"></i>
-        <button *ngIf="rw.labours?.length < 1" class="btn btn-sm" (click)="openModal(i)"><span class="bi bi-plus-circle"></span></button>
+        <i *ngIf="rw.labours!.length < 1" class="bi bi-view-stacked" (click)="copyLabours(i)"></i>
+        <button *ngIf="rw.labours!.length < 1" class="btn btn-sm" (click)="openModal(i)"><span class="bi bi-plus-circle"></span></button>
           <label *ngFor="let emp of rw.labours">
               {{emp.empObject.name}},
           </label>
-          <label><i class="bi bi-pencil-square" *ngIf="rw.labours?.length > 0" (click)="openModal(i)"></i></label>
-          <div style="color: red;font-size: 12px;" *ngIf="rw.labours?.length < 1 && error">
+          <label><i class="bi bi-pencil-square" *ngIf="rw.labours!.length > 0" (click)="openModal(i)"></i></label>
+          <div style="color: red;font-size: 12px;" *ngIf="rw.labours!.length < 1 && error">
             Labours is required.
           </div>
         </div>
@@ -205,15 +207,6 @@
                 </div>
       
     </td>
-    <td><button class="btn btn-primary" type="button" disabled style="width: 100%;
-      height: 29px;" *ngIf="isLoadingTask ||  rw.selectedItem == null">
-        <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true" style="margin-bottom: 13px;"></span>
-        <div></div>
-      </button>
-      <div *ngIf=" !isLoadingTask&& rw.selectedItem != null">
-        <input class="form-control input-sm" type="file" (change)="onImageSelected($event,i)" name="file">
-      </div>
-</td>
 </tr>
 <tr>
             <td></td>
@@ -240,6 +233,9 @@
     <div class="d-flex justify-content-end" style="margin-left: 1%;">
       <button  class="btn btn-sm btn-primary" (click)="onSubmit()" >Submit</button>
     </div>
+    <div class="d-flex justify-content-end" style="margin-left: 1%;">
+      <input class="form-control input-sm" type="file" (change)="onImageSelected($event)" name="file">
+    </div>
   </div>
 </div>
 <div class="col-lg-2 card shadow p-3  bg-white rounded" style="width: 24%;">
@@ -248,19 +244,20 @@
     <tbody>
       <tr *ngFor="let arr of laboursArray">
         <td style="text-align: left;">{{arr}}</td>
-        <td style="text-align: left;">{{timesheet.empAndTime.get(arr) | number:'1.0-1'}}</td>
+        <!-- <td style="text-align: left;">{{timesheet.empAndTime.get(arr) | number : '1.0-2'}}</td> -->
+        <td style="text-align: left;">{{makeProperTime(timesheet.empAndTime.get(arr)!.toString().replace('.',':'))}}</td>
       </tr>
       <tr>
         <td style="text-align: left;font-weight: bold;">Total Reported Hours (hh.mm)</td>
-        <td style="text-align: left;">{{timesheet.totalHoursSpent | number:'1.0-2'}}</td>
+        <td style="text-align: left;">{{makeProperTime(timesheet.totalHoursSpent.toString().replace('.',':'))}}</td>
       </tr>
       <tr>
         <td style="text-align: left;font-weight: bold;">Total Shift Hours (hh.mm)</td>
-        <td style="text-align: left;">{{totalShiftHours | number:'1.0-2'}}</td>
+        <td style="text-align: left;">{{makeProperTime(totalShiftHours.toString().replace('.',':'))}}</td>
       </tr>
       <tr *ngIf="diffInShiftHours!=0.0">
         <td style="color: red;text-align: left;font-weight: bold;">Difference Hours (hh.mm)</td>
-        <td style="text-align: left;">{{diffInShiftHours | number:'1.0-2'}}</td>
+        <td style="text-align: left;">{{makeProperTime(diffInShiftHours.toString().replace('.',':'))}}</td>
       </tr>
     </tbody>
   </table>
@@ -268,4 +265,4 @@
 </div> 
 </div>
 <app-loader *ngIf="isLoading"></app-loader>
-<app-multi-select-modal *ngIf="isModalOpen" [list]="crewMap.get(timesheet.selectedCrew)" (onClosed)="onModelClose($event)"></app-multi-select-modal>
+<app-multi-select-modal *ngIf="isModalOpen" [list]="this.rows[rowIndex].deflautlabours" (onClosed)="onModelClose($event)"></app-multi-select-modal>

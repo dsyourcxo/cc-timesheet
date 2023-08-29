@@ -1,8 +1,5 @@
-import { formatDate } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Buffer } from 'buffer';
-import { time } from 'console';
 import { BehaviorSubject, Observable, combineLatest, find, of, tap } from 'rxjs';
 import Swal from 'sweetalert2';
 import { GoogleSheetsServiceService } from './google-sheets-service.service';
@@ -44,6 +41,16 @@ export class TimesheetService {
         });
   
         return this.http.post('https://api.monday.com/v2',body1 , this.httpOptions)    
+  }
+
+  public TaskItemApi(itemId : any){
+  
+    let query1 = "{ items (ids:"+itemId+") {  name id column_values { title id type text} subitems { id name column_values { title id text} board{id}} } }";
+    let body = JSON.stringify({
+      'query' : query1
+    });
+
+    return this.http.post('https://api.monday.com/v2',body , this.httpOptions) 
   }
 
 public PostForMaterial(timesheet: any) {
@@ -95,12 +102,12 @@ public PostForMaterial(timesheet: any) {
      timesheet.rows.forEach((row: any) => {
       if(row.isStatusCheckBox){
         row.activityType = row.statusCheckBox;
+      }
           let query = "mutation{change_multiple_column_values(item_id: "+row.selectedItem.id+" , board_id: "+row.project.id+", column_values:\"{\\\"status3\\\": \\\""+row.activityType+"\\\"}\") { id }}";
           let body1 = JSON.stringify({
             'query': query
           });
           this.apiCallArray.push(this.http.post('https://api.monday.com/v2', body1, this.httpOptions));
-       }
     });
   }
 
@@ -221,52 +228,6 @@ public makeCall(){
   // });
   // }
 
-  public uploadImage(timesheet : any) {
-
-    console.log(timesheet);
-
-    timesheet.rows.forEach((row: any) => {
-     
-      this.googleService.uploadFile(row.selectedImage);
-    //   let query = `mutation { create_item (board_id: 5036388082,item_name:"`+ row.project.name +'-'+ row.date+`"){id}}`;
-
-    //   // "mutation{change_multiple_column_values(item_id: "+row.selectedItem.id+" , board_id: "+row.project.id+", column_values:\"{\\\"status1\\\": \\\""+row.activityType+"\\\"}\") { id }}";
-    //   let body = JSON.stringify({
-    //     'query': query
-    //   });
-
-    //   this.http.post('https://api.monday.com/v2', body, this.httpOptions).subscribe((x : any)=>{
-    //   let query1 =  `mutation add_file($file: File!) {add_file_to_column (item_id:"`+ x.data.create_item.id +`", column_id:"files" file: $file) {id}}`;
-    //   let boundary = "xxxxxxxxxx";
-    //   let data = "";
-    //   let data1 = "";
-    //   data += "--" + boundary + "\r\n";
-    // data += "Content-Disposition: form-data; name=\"query\"; \r\n";
-    // data += "Content-Type:application/json\r\n\r\n";
-    // data += "\r\n" + query + "\r\n";
-
-    // // // construct file part
-    // data += "--" + boundary + "\r\n";
-    // data += "Content-Disposition: form-data; name=\"variables[file]\"; filename=\"" + row.selectedImage.name + "\"\r\n";
-    // data += "Content-Type:application/octet-stream\r\n\r\n";
-
-    // console.log(row.selectedImageBinary);
-    // const reader = new FileReader();
-    // reader.readAsText(row.selectedImage);
-    // let content = reader.result as string;
-
-    // console.log(content);
-    // let payload = null;
-
-    // if(content != null){
-    
-    // payload  = Buffer.concat([
-    //         Buffer.from(data, "utf8"),
-    //         Buffer.from(content, 'binary'),
-    //         Buffer.from("\r\n--" + boundary + "--\r\n", "utf8"),
-    // ]);
-  });
-}
   }
     
       // const uploadData = new FormData();
