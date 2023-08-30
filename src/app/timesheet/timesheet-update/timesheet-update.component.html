@@ -222,25 +222,26 @@
           </tr>
           </tbody>
         </table>
+        <button  class="btn btn-sm btn-danger" (click)="addRow()"><span class="bi bi-plus-circle"></span>Add New Row</button><br><br/>
       </div>
     </div>
   </div>
 </div>
-  <div class="d-flex flex-row" style="margin: 1%;">
+  <div class="d-flex flex-row" >
     <div class="d-flex justify-content-start">
-      <button  class="btn btn-sm btn-danger" (click)="addRow()"><span class="bi bi-plus-circle"></span>Add New Row</button><br><br/>
+      
     </div>
   </div>
-  <div class="d-flex flex-row" style="margin: 1%;">
-    <div class="d-flex justify-content-start" style="margin-left: 1%;">
-      <p>Please upload picture of <b>PAPER TIMESHEET</b> here</p>    
-      <input class="form-control input-sm" type="file" (change)="onImageSelected($event)" name="file">
+  <p class="mt-2">Please upload picture of <b>PAPER TIMESHEET</b> here</p>    
+  <div class="d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center">
+        <input class="form-control input-md" type="file" (change)="onImageSelected($event)" name="file">
     </div>
-    <br/><br/>
-    <div class="d-flex justify-content-end" style="margin-left: 1%;">
-      <button  class="btn btn-sm btn-primary" (click)="onSubmit()" >Submit</button>
+    <div class="ml-1">
+        <button class="btn btn-sm btn-primary" (click)="onSubmit()">Submit</button>
     </div>
-  </div>
+</div>
+
 </div>
 <div class="col-lg-2 card shadow p-3  bg-white rounded" style="width: 24%;">
   <h5 class="card-title">Time Validation</h5>
