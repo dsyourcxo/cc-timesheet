@@ -505,8 +505,7 @@ export class TimesheetUpdateComponent implements OnInit, OnChanges {
       this.timesheet.date == null ||
       this.timesheet.checkOutTime == null ||
       this.timesheet.selectedCrew == '' ||
-      this.timesheet.breakDuration == null ||
-      this.timesheet.selectedImage == null
+      this.timesheet.breakDuration == null 
     ) {
       this.error = true;
     }
