@@ -190,7 +190,7 @@
       <div style="text-align: start;
       display: inline-flex;
       font-size: smaller;" *ngIf="rw.showMarkCompletedCol">
-      <input *ngIf=" !isLoadingTask&& rw.selectedItem != null"  type="checkbox"  name="statuscheck" [(ngModel)]="rw.isStatusCheckBox">
+      <input *ngIf=" !isLoadingTask && rw.selectedItem != null"  type="checkbox"  name="statuscheck" [(ngModel)]="rw.isStatusCheckBox">
       <label style="margin: auto;">{{rw.statusCheckBox}}</label>
     </div>
     </td>
@@ -250,19 +250,24 @@
       <tr *ngFor="let arr of laboursArray">
         <td style="text-align: left;">{{arr}}</td>
         <!-- <td style="text-align: left;">{{timesheet.empAndTime.get(arr) | number : '1.0-2'}}</td> -->
-        <td style="text-align: left;">{{makeProperTime(timesheet.empAndTime.get(arr)!.toString().replace('.',':'))}}</td>
+        <!-- <td style="text-align: left;">{{makeProperTime(timesheet.empAndTime.get(arr)!.toString().replace('.',':'))}}</td> -->
+        <td style="text-align: left;">{{timesheet.empAndTime.get(arr)!}}</td>
       </tr>
       <tr>
         <td style="text-align: left;font-weight: bold;">Total Reported Hours (hh.mm)</td>
-        <td style="text-align: left;">{{makeProperTime(timesheet.totalHoursSpent.toString().replace('.',':'))}}</td>
+        <!-- <td style="text-align: left;">{{makeProperTime(timesheet.totalHoursSpent.toString().replace('.',':'))}}</td> -->
+        <!-- <td style="text-align: left;">{{makeProperTime(timesheet.totalHoursSpent.toString().replace('.',':'))}}</td> -->
+        <td style="text-align: left;">{{timesheet.totalHoursSpent}}</td>
       </tr>
-      <tr>
+      <tr *ngIf="totalShiftHours">
         <td style="text-align: left;font-weight: bold;">Total Shift Hours (hh.mm)</td>
-        <td style="text-align: left;">{{makeProperTime(totalShiftHours.toString().replace('.',':'))}}</td>
+        <!-- <td style="text-align: left;">{{makeProperTime(totalShiftHours.toString().replace('.',':'))}}</td> -->
+        <td style="text-align: left;">{{totalShiftHours}}</td>
       </tr>
-      <tr *ngIf="diffInShiftHours!=0.0">
+      <tr *ngIf="diffInShiftHours">
         <td style="color: red;text-align: left;font-weight: bold;">Difference Hours (hh.mm)</td>
-        <td style="text-align: left;">{{makeProperTime(diffInShiftHours.toString().replace('.',':'))}}</td>
+        <!-- <td style="text-align: left;">{{makeProperTime(diffInShiftHours.toString().replace('.',':'))}}</td> -->
+        <td style="text-align: left;">{{diffInShiftHours}}</td>
       </tr>
     </tbody>
   </table>

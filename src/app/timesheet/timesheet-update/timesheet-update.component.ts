@@ -82,12 +82,13 @@ export class TimesheetUpdateComponent implements OnInit, OnChanges {
   };
 
   laboursArray: any[] = [];
-  diffInShiftHours = 0;
+  diffInShiftHours:string|undefined = undefined;
   materials: Map<string, any[]> = new Map();
   totalHoursSpent: number = 0;
   rowIndex: number = -1;
   activityRows: any[] = [];
-  totalShiftHours: number = 0;
+  // totalShiftHours: number = 0;
+  totalShiftHours: string|undefined = undefined;
   isLoadingTask: boolean = true;
   rowLoading: boolean = false;
   isUpdating: boolean = false;
@@ -109,7 +110,7 @@ export class TimesheetUpdateComponent implements OnInit, OnChanges {
     });
   }
 
-  ngOnChanges(changes: SimpleChanges): void {}
+  ngOnChanges(changes: SimpleChanges): void { }
 
   ngOnInit(): void {
     if (this.data?.data?.boards && this.data.data?.boards[0].items) {
@@ -279,75 +280,142 @@ export class TimesheetUpdateComponent implements OnInit, OnChanges {
 
   public onHoursSpentChange() {
     this.timesheet.empAndTime = new Map();
-    this.timesheet.totalHoursSpent = 0;
+    this.timesheet.UserWithTimeInMin = new Map();
+    // this.timesheet.totalHoursSpent = ;
+
     this.rows.forEach((r) => {
       if (r.manHoursSpent > -1) {
         r.labours?.forEach((e: any) => {
           let time = (r.manHoursSpent * 60) / r.labours.length;
+          // console.log("Split time :", time);
 
           // time = parseFloat(parseFloat(time.toString()).toFixed(2));
-          if (this.timesheet.empAndTime.get(e.empObject.name)) {
-            time = time + this.timesheet.empAndTime.get(e.empObject.name)!;
-            this.timesheet.empAndTime.set(e.empObject.name, time);
+          // if (this.timesheet.empAndTime.get(e.empObject.name)) {
+          //   time = time + this.timesheet.empAndTime.get(e.empObject.name)!;
+          //   this.timesheet.empAndTime.set(e.empObject.name, time);
+          // } else {
+          //   this.timesheet.empAndTime.set(e.empObject.name, time);
+          // }
+
+          // let parsedTime = parseInt((time / 60).toString());
+          // parsedTime = parseFloat(parsedTime + '.' + (time % 60));
+          // this.timesheet.empAndTime.set(
+          //   e.empObject.name,
+          //   parseFloat(parsedTime.toFixed(2))
+          // );
+
+          // this.timesheet.empAndTime.set(
+          //   e.empObject.name,
+          //   parseFloat(this.toHoursAndMinutes(time))
+          // );
+
+
+          if (this.timesheet.UserWithTimeInMin.get(e.empObject.name)) {
+            time = time + this.timesheet.UserWithTimeInMin.get(e.empObject.name)!;
+            this.timesheet.UserWithTimeInMin.set(e.empObject.name, time);
           } else {
-            this.timesheet.empAndTime.set(e.empObject.name, time);
+            this.timesheet.UserWithTimeInMin.set(e.empObject.name, time);
           }
 
-          let parsedTime = parseInt((time / 60).toString());
-          parsedTime = parseFloat(parsedTime + '.' + (time % 60));
-          this.timesheet.empAndTime.set(
-            e.empObject.name,
-            parseFloat(parsedTime.toFixed(2))
-          );
         });
 
-        this.timesheet.totalHoursSpent =
-          this.timesheet.totalHoursSpent + r.manHoursSpent;
+        // this.timesheet.totalHoursSpent =
+        //   this.timesheet.totalHoursSpent + r.manHoursSpent;
       } else {
         alert('Man Hour Spent Should Be Positive Number');
         r.manHoursSpent = 0;
       }
     });
 
-    let totalnetShift = this.timesheet.netShiftHours;
-    this.diffInShiftHours = 0;
-    this.timesheet.rows.forEach((x) => {
-      this.timesheet.totalHoursSpent =
-        this.timesheet.totalHoursSpent + x.manHoursSpent;
-    });
+    let totalReportedTimeInMin = 0;  // this is total hours spent by users 
+    for (let [key, value] of this.timesheet.UserWithTimeInMin) {
+      console.log(key, value);
+      let timeInMin = Number(value)
 
-    this.laboursArray = Array.from(this.timesheet.empAndTime.keys());
-    console.log(this.laboursArray);
+      totalReportedTimeInMin = totalReportedTimeInMin + timeInMin;
 
-    this.totalShiftHours = 0;
-
-    totalnetShift = this.laboursArray.length * totalnetShift;
-
-    this.diffInShiftHours = this.timesheet.totalHoursSpent * 60 - totalnetShift;
-
-    let time = parseInt((totalnetShift / 60).toString());
-
-    time = parseFloat(time + '.' + (totalnetShift % 60));
-
-    this.totalShiftHours = time;
-
-    this.totalShiftHours = parseFloat(
-      parseFloat(this.totalShiftHours.toString()).toFixed(2)
-    );
-
-    if (this.diffInShiftHours < 0.0) {
-      time = parseInt((Math.abs(this.diffInShiftHours) / 60).toString());
-      time = parseFloat(time + '.' + (Math.abs(this.diffInShiftHours) % 60));
-      time = -1 * time;
-    } else {
-      time = parseInt((this.diffInShiftHours / 60).toString());
-      time = parseFloat(time + '.' + (this.diffInShiftHours % 60));
+      // console.log("user and time :",key,this.toHoursAndMinutes(timeInMin))
+      this.timesheet.empAndTime.set(key, this.toHoursAndMinutes(timeInMin));
     }
-    this.diffInShiftHours = time;
 
-    this.diffInShiftHours = parseFloat(
-      parseFloat(this.diffInShiftHours.toString()).toFixed(2)
-    );
+    //set totalReportedTimeInMin for UI
+    this.timesheet.totalHoursSpent = this.toHoursAndMinutes(totalReportedTimeInMin)
+
+
+    let totalnetShiftInMin = this.timesheet.netShiftHours;
+
+    this.diffInShiftHours =undefined;
+
+    //no need to calcaulate again
+    // this.timesheet.rows.forEach((x) => {
+    //   this.timesheet.totalHoursSpent =
+    //     this.timesheet.totalHoursSpent + x.manHoursSpent;
+    // });
+
+    //get user names
+    this.laboursArray = Array.from(this.timesheet.empAndTime.keys());
+    // console.log("this.laboursArray:", this.laboursArray);
+
+    this.totalShiftHours = undefined;
+
+    //calcualtge total shift hours 
+    totalnetShiftInMin = this.laboursArray.length * totalnetShiftInMin;
+
+
+    console.log("totalnetShift:",totalnetShiftInMin);
+    // this.diffInShiftHours = this.timesheet.totalHoursSpent * 60 - totalnetShift;
+    let diffInShifTimeInMin = totalReportedTimeInMin - totalnetShiftInMin;
+    this.diffInShiftHours = this.toHoursAndMinutes(diffInShifTimeInMin);
+
+    // let time = parseInt((totalnetShift / 60).toString());
+
+    // time = parseFloat(time + '.' + (totalnetShift % 60));
+
+    // this.totalShiftHours = time;
+
+    // this.totalShiftHours = parseFloat(
+    //   parseFloat(this.totalShiftHours.toString()).toFixed(2)
+    // );
+
+    this.totalShiftHours=this.toHoursAndMinutes(totalnetShiftInMin)
+
+    // if (this.diffInShiftHours < 0.0) {
+    //   time = parseInt((Math.abs(this.diffInShiftHours) / 60).toString());
+    //   time = parseFloat(time + '.' + (Math.abs(this.diffInShiftHours) % 60));
+    //   time = -1 * time;
+    // } else {
+    //   time = parseInt((this.diffInShiftHours / 60).toString());
+    //   time = parseFloat(time + '.' + (this.diffInShiftHours % 60));
+    // }
+    // this.diffInShiftHours = time;
+
+    // this.diffInShiftHours = parseFloat(
+    //   parseFloat(this.diffInShiftHours.toString()).toFixed(2)
+    // );
+  }
+
+  toHoursAndMinutes(totalMinutes: number) {
+    const minutes = totalMinutes % 60;
+    const hours = Math.floor(totalMinutes / 60);
+    return `${this.padTo2Digits(hours)}:${this.padTo2Digits(minutes)}`;
+    // return `${hours.toString()}:${this.padTo2Digits(minutes)}`;
+  }
+
+  padTo2Digits(num: number) {
+    return num.toString().padStart(2, '0');
+  }
+
+  convertStringToTime(durationString: string): any {
+    const parts = durationString.split(' ');
+
+    const daysIndex = parts.findIndex(part => part === 'days');
+    const days = parseInt(parts[daysIndex - 1]);
+
+    const timeParts = parts[daysIndex + 1].split(':');
+    const hours = parseInt(timeParts[0]);
+    const minutes = parseInt(timeParts[1]);
+
+    return { days, hours, minutes };
   }
 
   materialModelAction(val: any, index: any) {
@@ -442,13 +510,13 @@ export class TimesheetUpdateComponent implements OnInit, OnChanges {
     ) {
       this.error = true;
     }
-    if (this.timesheet.selectedImage == null) {
-      this.error = true;
-      errorText = 'please select the image';
-    }
+    // if (this.timesheet.selectedImage == null) {
+    //   this.error = true;
+    //   errorText = 'please select the image';
+    // }
 
     if (!this.error) {
-      if (this.diffInShiftHours != 0.0) {
+      if (!this.diffInShiftHours) {
         Swal.fire({
           title: 'Error',
           text: 'Total Reported Hours Is Less than Total Shift Hours',
@@ -558,7 +626,7 @@ export class TimesheetUpdateComponent implements OnInit, OnChanges {
 
   makeProperTime(val: string) {
     let isMinus = false;
-    // console.log(val)
+    console.log("entered value:", val)
     if (val[0] == '-') {
       isMinus = true;
       val = val.replace('-', '');
@@ -578,4 +646,28 @@ export class TimesheetUpdateComponent implements OnInit, OnChanges {
     // console.log(val);
     return val;
   }
+
+  // existing 
+  // makeProperTime(val: string) {
+  //   let isMinus = false;
+  //   // console.log(val)
+  //   if (val[0] == '-') {
+  //     isMinus = true;
+  //     val = val.replace('-', '');
+  //   }
+  //   let array = val.split(':');
+  //   console.log(array);
+  //   if (array.length == 2) {
+  //     const hours = parseInt(array[0]);
+  //     const minutes = parseInt(array[1]);
+  //     return hours + minutes;
+  //   }
+  //   if (array[0]?.length == 2 && array[1]?.length == 1) val = val + 0;
+  //   else if (array[0]?.length == 1 && array[1]?.length == 1) val = val + 0;
+  //   else if (array?.length < 2) val = val + ':00';
+
+  //   if (isMinus) val = '-' + val;
+  //   // console.log(val);
+  //   return val;
+  // }
 }
