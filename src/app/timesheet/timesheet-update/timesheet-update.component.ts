@@ -44,6 +44,10 @@ export class TimesheetUpdateComponent implements OnInit, OnChanges {
 
   openMaterialModal: string = '';
 
+  selectChanged = false;
+
+  timeSelected = false;
+
   colunms: String[] = [
     'Actions',
     'Select Project',
@@ -82,13 +86,13 @@ export class TimesheetUpdateComponent implements OnInit, OnChanges {
   };
 
   laboursArray: any[] = [];
-  diffInShiftHours:string|undefined = undefined;
+  diffInShiftHours: string | undefined = undefined;
   materials: Map<string, any[]> = new Map();
   totalHoursSpent: number = 0;
   rowIndex: number = -1;
   activityRows: any[] = [];
   // totalShiftHours: number = 0;
-  totalShiftHours: string|undefined = undefined;
+  totalShiftHours: string | undefined = undefined;
   isLoadingTask: boolean = true;
   rowLoading: boolean = false;
   isUpdating: boolean = false;
@@ -110,7 +114,7 @@ export class TimesheetUpdateComponent implements OnInit, OnChanges {
     });
   }
 
-  ngOnChanges(changes: SimpleChanges): void { }
+  ngOnChanges(changes: SimpleChanges): void {}
 
   ngOnInit(): void {
     if (this.data?.data?.boards && this.data.data?.boards[0].items) {
@@ -261,6 +265,7 @@ export class TimesheetUpdateComponent implements OnInit, OnChanges {
 
   public onCrewSelect(val: any) {
     this.crewMap.get(this.timesheet.selectedCrew);
+    this.selectChanged = true;
   }
 
   public onModelClose(event: any) {
@@ -284,9 +289,30 @@ export class TimesheetUpdateComponent implements OnInit, OnChanges {
     // this.timesheet.totalHoursSpent = ;
 
     this.rows.forEach((r) => {
+      console.log(this.rows);
       if (r.manHoursSpent > -1) {
         r.labours?.forEach((e: any) => {
           let time = (r.manHoursSpent * 60) / r.labours.length;
+          // Create an object to represent the data you want to add
+          const projectData = {
+            projectName: r.project?.name,
+            empName: e.empObject.name,
+            time: this.toHoursAndMinutes(time),
+          };
+
+          // Check if the projectData is not already in the array
+          const isDuplicate = r.timePerProject.some(
+            (existingData) =>
+              existingData.projectName === projectData.projectName &&
+              existingData.empName === projectData.empName
+            // && existingData.time === projectData.time
+            // task name and user name
+          );
+
+          // If it's not a duplicate, push the projectData object into the array
+          if (!isDuplicate) {
+            r.timePerProject.push(projectData);
+          }
           // console.log("Split time :", time);
 
           // time = parseFloat(parseFloat(time.toString()).toFixed(2));
@@ -309,14 +335,13 @@ export class TimesheetUpdateComponent implements OnInit, OnChanges {
           //   parseFloat(this.toHoursAndMinutes(time))
           // );
 
-
           if (this.timesheet.UserWithTimeInMin.get(e.empObject.name)) {
-            time = time + this.timesheet.UserWithTimeInMin.get(e.empObject.name)!;
+            time =
+              time + this.timesheet.UserWithTimeInMin.get(e.empObject.name)!;
             this.timesheet.UserWithTimeInMin.set(e.empObject.name, time);
           } else {
             this.timesheet.UserWithTimeInMin.set(e.empObject.name, time);
           }
-
         });
 
         // this.timesheet.totalHoursSpent =
@@ -327,10 +352,10 @@ export class TimesheetUpdateComponent implements OnInit, OnChanges {
       }
     });
 
-    let totalReportedTimeInMin = 0;  // this is total hours spent by users 
+    let totalReportedTimeInMin = 0; // this is total hours spent by users
     for (let [key, value] of this.timesheet.UserWithTimeInMin) {
       console.log(key, value);
-      let timeInMin = Number(value)
+      let timeInMin = Number(value);
 
       totalReportedTimeInMin = totalReportedTimeInMin + timeInMin;
 
@@ -339,12 +364,13 @@ export class TimesheetUpdateComponent implements OnInit, OnChanges {
     }
 
     //set totalReportedTimeInMin for UI
-    this.timesheet.totalHoursSpent = this.toHoursAndMinutes(totalReportedTimeInMin)
-
+    this.timesheet.totalHoursSpent = this.toHoursAndMinutes(
+      totalReportedTimeInMin
+    );
 
     let totalnetShiftInMin = this.timesheet.netShiftHours;
 
-    this.diffInShiftHours =undefined;
+    this.diffInShiftHours = undefined;
 
     //no need to calcaulate again
     // this.timesheet.rows.forEach((x) => {
@@ -358,11 +384,10 @@ export class TimesheetUpdateComponent implements OnInit, OnChanges {
 
     this.totalShiftHours = undefined;
 
-    //calcualtge total shift hours 
+    //calcualtge total shift hours
     totalnetShiftInMin = this.laboursArray.length * totalnetShiftInMin;
 
-
-    console.log("totalnetShift:",totalnetShiftInMin);
+    console.log('totalnetShift:', totalnetShiftInMin);
     // this.diffInShiftHours = this.timesheet.totalHoursSpent * 60 - totalnetShift;
     let diffInShifTimeInMin = totalReportedTimeInMin - totalnetShiftInMin;
     this.diffInShiftHours = this.toHoursAndMinutes(diffInShifTimeInMin);
@@ -377,7 +402,7 @@ export class TimesheetUpdateComponent implements OnInit, OnChanges {
     //   parseFloat(this.totalShiftHours.toString()).toFixed(2)
     // );
 
-    this.totalShiftHours=this.toHoursAndMinutes(totalnetShiftInMin)
+    this.totalShiftHours = this.toHoursAndMinutes(totalnetShiftInMin);
 
     // if (this.diffInShiftHours < 0.0) {
     //   time = parseInt((Math.abs(this.diffInShiftHours) / 60).toString());
@@ -408,7 +433,7 @@ export class TimesheetUpdateComponent implements OnInit, OnChanges {
   convertStringToTime(durationString: string): any {
     const parts = durationString.split(' ');
 
-    const daysIndex = parts.findIndex(part => part === 'days');
+    const daysIndex = parts.findIndex((part) => part === 'days');
     const days = parseInt(parts[daysIndex - 1]);
 
     const timeParts = parts[daysIndex + 1].split(':');
@@ -463,6 +488,7 @@ export class TimesheetUpdateComponent implements OnInit, OnChanges {
     }
 
     this.onHoursSpentChange();
+    this.timeSelected = true;
   }
 
   openModal(num: number) {
@@ -505,7 +531,7 @@ export class TimesheetUpdateComponent implements OnInit, OnChanges {
       this.timesheet.date == null ||
       this.timesheet.checkOutTime == null ||
       this.timesheet.selectedCrew == '' ||
-      this.timesheet.breakDuration == null 
+      this.timesheet.breakDuration == null
     ) {
       this.error = true;
     }
@@ -625,7 +651,7 @@ export class TimesheetUpdateComponent implements OnInit, OnChanges {
 
   makeProperTime(val: string) {
     let isMinus = false;
-    console.log("entered value:", val)
+    console.log('entered value:', val);
     if (val[0] == '-') {
       isMinus = true;
       val = val.replace('-', '');
@@ -646,7 +672,7 @@ export class TimesheetUpdateComponent implements OnInit, OnChanges {
     return val;
   }
 
-  // existing 
+  // existing
   // makeProperTime(val: string) {
   //   let isMinus = false;
   //   // console.log(val)

@@ -1,278 +1,596 @@
 <div *ngIf="!isLoading">
-    <h2 class="card-title" style="margin-bottom: 1%;">Timesheet</h2>
-<div class="row">
- <div class="card mb-3 col-lg-2 shadow p-3  bg-white rounded border-success mx-1">
-    <div class="card-body p-0 ">
-      <p class="card-title">Select Your Crew</p>
-      <select [ngClass]="crew.errors?.['required'] && error?'isRequired':''" class="form-control" name="crew" [ngClass]="validation.isCrew && error?'isRequired':''" [(ngModel)]="timesheet.selectedCrew" (change)="onCrewSelect($event)" required #crew="ngModel">
-        <option *ngFor="let type of crewType" [ngValue]="type">{{type}}</option>
-    </select>
-    <p style="color: red;font-size: 12px;" *ngIf="crew.errors?.['required'] && error">
-      Crew is required.
-    </p>
-    </div>
-  </div>
-  <div class="card mb-3 col-lg-2 shadow p-3  bg-white rounded  border-primary mx-1">
-    <div class="card-body p-0 ">
-      <p class="card-title">Select Date<span class="required">{{' *'}}</span></p>
-      <input class="form-control" name="date"  [ngClass]="date.errors?.['required'] && error?'isRequired':''"
-        required #date="ngModel" type="date" [(ngModel)]="timesheet.date">
-    <p style="color: red;font-size: 12px;" *ngIf="date.errors?.['required'] && error">
-      Date is required.
-    </p>
-    </div>
-  </div>
-  <div class="card mb-3 col-lg-2 shadow p-3  bg-white rounded border-warning mx-1">
-    <div class="card-body p-0 ">
-      <p class="card-title">CheckIn Time<span class="required">{{' *'}}</span></p>
-      <div [ngClass]="timesheet.checkInTime == null && error?'isRequired':''">
-        <app-time-input  
-        [isMaridianTime]="true"
-        (totalTime)="onTimeChange($event,'CheckIn')"></app-time-input></div>
-  <p style="color: red;font-size: 12px;" *ngIf="timesheet.checkInTime == null && error?'isRequired':''">
-      CheckIn Time is required.
-    </p>
-    </div>
-  </div>
-  <div class="card mb-3 col-lg-2 shadow p-3  bg-white rounded border-danger mx-1">
-    <div class="card-body p-0 ">
-      <p class="card-title">CheckOut Time<span class="required">{{' *'}}</span></p>
-<div [ngClass]="timesheet.checkOutTime == null && error?'isRequired':''">
-  <app-time-input
-  [isMaridianTime]="true"
-   (totalTime)="onTimeChange($event,'CheckOut')"></app-time-input></div>
-   <p style="color: red;font-size: 12px;" *ngIf="timesheet.checkOutTime == null && error?'isRequired':''">
-      CheckOut Time is required
-    </p>
-    </div>
-  </div>
-  <div class="card mb-3 col-lg-2 shadow p-3  bg-white rounded border-info mx-1">
-    <div class="card-body p-0 ">
-      <p class="card-title">Break Duration(Mins)<span class="required">{{' *'}}</span></p>
-<div [ngClass]="timesheet.breakDuration == null && error?'isRequired':''">
-  <app-time-input 
-  [hourLength]=0
-  (totalTime)="onTimeChange($event,'Break')"></app-time-input></div>
-    <p style="color: red;font-size: 12px;" *ngIf="timesheet.breakDuration == null && error">
-      Break Time is required.
-    </p>
-    </div>
-  </div>
-  </div>
-<div class="row">
-<div class="col-lg-9 card shadow p-3  bg-white rounded mx-1">
-<div>
-  <div class="card">
-    <div class="card-body">
-      <div class="table-responsive text-nowrap">
-        <table class="table table-bordered">
-          <thead>
-            <tr>
-              <th *ngFor="let colunm of colunms" scope="col">
-                <div style="width: 150px;">{{colunm}}<span *ngIf="cssClassDecider(colunm)" class="required">{{' *'}}</span></div>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let rw of rows; let i = index;">
-              <td>
-                <div style="font-size: 19px;"><i class="bi bi-trash" (click)="deleteRow()"></i>
-                  <i class="bi bi-window-stack" (click)="duplicateRow(i)"></i></div>
-            </td>
-              <td>
-                  <select class="form-control input-sm" name="i" [(ngModel)]="rw.project" (change)="selectedProject(i)">
-                      <option *ngFor="let project of projects" [ngValue]="project">{{project.name}}</option>
-                  </select>
-              </td>
-              <td><button class="btn btn-primary" type="button" disabled style="width: 100%;
-                height: 29px;" *ngIf="rw.project == null">
-                  <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true" style="margin-bottom: 13px;"></span>
-                  <div></div>
-                </button>
-                  <select class="form-control input-sm" name="group" *ngIf="rw.project != null" [(ngModel)]="rw.selectGroup" (change)="selectedGroup(i)">
-                    <option *ngFor="let group of rw.groups" [ngValue]="group">{{group}}</option>
-                </select>
-            </td>
-              <td>
-                <button class="btn btn-primary" type="button" disabled style="width: 100%;
-                height: 29px;" *ngIf="rw.selectGroup == null">
-                  <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true" style="margin-bottom: 13px;"></span>
-                  <div></div>
-                </button>
-                  <select class="form-control input-sm" *ngIf="rw.items.length>0 && rw.selectGroup != null" name="item" [(ngModel)]="rw.selectedItem" (change)="selectedTask(i)">
-                      <option *ngFor="let item of rw.items" [ngValue]="item">{{item.name}}</option>
-                  </select>
-              </td>
-            <td><button class="btn btn-primary" type="button" disabled style="width: 100%;
-                height: 29px;" *ngIf="isLoadingTask || rw.selectedItem == null">
-                  <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true" style="margin-bottom: 13px;"></span>
-                  <div></div>
-                </button>
-                <div *ngIf="!isLoadingTask && rw.selectedItem != null">
-                  {{rw.estimatedTime}}
-                </div>
-          </td>
-          <td><button class="btn btn-primary" type="button" disabled style="width: 100%;
-                height: 29px;" *ngIf="isLoadingTask ||  rw.selectedItem == null">
-                  <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true" style="margin-bottom: 13px;"></span>
-                  <div></div>
-                </button>
-                <div *ngIf=" !isLoadingTask&& rw.selectedItem != null">
-                  {{rw.timeSpentTillDate}}
-                </div>
-            
-        </td>
-        <td><button class="btn btn-primary" type="button" disabled style="width: 100%;
-                height: 29px;" *ngIf="isLoadingTask ||  rw.selectedItem == null">
-                  <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true" style="margin-bottom: 13px;"></span>
-                  <div></div>
-                </button>
-                <div *ngIf="rw.items.length>0 &&  !isLoadingTask && rw.selectedItem != null && rw.actualActivityType == 'Maintenance at Site'">
-                  {{rw.actualActivityType}}
-                </div>
-          <select class="form-control input-sm" name="comments" *ngIf="rw.items.length>0 &&  !isLoadingTask && rw.selectedItem != null && rw.actualActivityType != 'Maintenance at Site'" [(ngModel)]="rw.activityType">
-            <option *ngFor="let act of activityDropDownValues">{{act}}</option>
-            <option>{{rw.actualActivityType}}</option>
+  <h2 class="card-title" style="margin-bottom: 1%">Timesheet</h2>
+  <div class="row">
+    <div
+      class="card mb-3 col-lg-2 shadow p-3 bg-white rounded border-success mx-1"
+    >
+      <div class="card-body p-0">
+        <p class="card-title">Select Your Crew</p>
+        <select
+          [ngClass]="crew.errors?.['required'] && error?'isRequired':''"
+          class="form-control"
+          name="crew"
+          [ngClass]="validation.isCrew && error ? 'isRequired' : ''"
+          [(ngModel)]="timesheet.selectedCrew"
+          (change)="onCrewSelect($event)"
+          required
+          #crew="ngModel"
+          [disabled]="selectChanged"
+        >
+          <option *ngFor="let type of crewType" [ngValue]="type">
+            {{ type }}
+          </option>
         </select>
-      </td>
-      <td [ngClass]="rw.labours.length < 1 && error?'isRequired':''">
-        <button class="btn btn-primary" type="button" disabled style="width: 100%;
-                height: 29px;" *ngIf="isLoadingTask ||  rw.selectedItem == null">
-                  <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true" style="margin-bottom: 13px;"></span>
-                  <div></div>
-                </button>
-                <div *ngIf=" !isLoadingTask&& rw.selectedItem != null">
-        <i *ngIf="rw.labours!.length < 1" class="bi bi-view-stacked" (click)="copyLabours(i)"></i>
-        <button *ngIf="rw.labours!.length < 1" class="btn btn-sm" (click)="openModal(i)"><span class="bi bi-plus-circle"></span></button>
-          <label *ngFor="let emp of rw.labours">
-              {{emp.empObject.name}},
-          </label>
-          <label><i class="bi bi-pencil-square" *ngIf="rw.labours!.length > 0" (click)="openModal(i)"></i></label>
-          <div style="color: red;font-size: 12px;" *ngIf="rw.labours!.length < 1 && error">
-            Labours is required.
+        <p
+          style="color: red; font-size: 12px"
+          *ngIf="crew.errors?.['required'] && error"
+        >
+          Crew is required.
+        </p>
+      </div>
+    </div>
+    <div
+      class="card mb-3 col-lg-2 shadow p-3 bg-white rounded border-primary mx-1"
+    >
+      <div class="card-body p-0">
+        <p class="card-title">
+          Select Date<span class="required">{{ " *" }}</span>
+        </p>
+        <input
+          class="form-control"
+          name="date"
+          [ngClass]="date.errors?.['required'] && error?'isRequired':''"
+          required
+          #date="ngModel"
+          type="date"
+          [(ngModel)]="timesheet.date"
+        />
+        <p
+          style="color: red; font-size: 12px"
+          *ngIf="date.errors?.['required'] && error"
+        >
+          Date is required.
+        </p>
+      </div>
+    </div>
+    <div
+      class="card mb-3 col-lg-2 shadow p-3 bg-white rounded border-warning mx-1"
+    >
+      <div class="card-body p-0">
+        <p class="card-title">
+          CheckIn Time<span class="required">{{ " *" }}</span>
+        </p>
+        <div
+          [ngClass]="timesheet.checkInTime == null && error ? 'isRequired' : ''"
+        >
+          <app-time-input
+            [isMaridianTime]="true"
+            (totalTime)="onTimeChange($event, 'CheckIn')"
+          ></app-time-input>
+        </div>
+        <p
+          style="color: red; font-size: 12px"
+          *ngIf="timesheet.checkInTime == null && error ? 'isRequired' : ''"
+        >
+          CheckIn Time is required.
+        </p>
+      </div>
+    </div>
+    <div
+      class="card mb-3 col-lg-2 shadow p-3 bg-white rounded border-danger mx-1"
+    >
+      <div class="card-body p-0">
+        <p class="card-title">
+          CheckOut Time<span class="required">{{ " *" }}</span>
+        </p>
+        <div
+          [ngClass]="
+            timesheet.checkOutTime == null && error ? 'isRequired' : ''
+          "
+        >
+          <app-time-input
+            [isMaridianTime]="true"
+            (totalTime)="onTimeChange($event, 'CheckOut')"
+          ></app-time-input>
+        </div>
+        <p
+          style="color: red; font-size: 12px"
+          *ngIf="timesheet.checkOutTime == null && error ? 'isRequired' : ''"
+        >
+          CheckOut Time is required
+        </p>
+      </div>
+    </div>
+    <div
+      class="card mb-3 col-lg-2 shadow p-3 bg-white rounded border-info mx-1"
+    >
+      <div class="card-body p-0">
+        <p class="card-title">
+          Break Duration(Mins)<span class="required">{{ " *" }}</span>
+        </p>
+        <div
+          [ngClass]="
+            timesheet.breakDuration == null && error ? 'isRequired' : ''
+          "
+        >
+          <app-time-input
+            [hourLength]="0"
+            (totalTime)="onTimeChange($event, 'Break')"
+          ></app-time-input>
+        </div>
+        <p
+          style="color: red; font-size: 12px"
+          *ngIf="timesheet.breakDuration == null && error"
+        >
+          Break Time is required.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-lg-9 card shadow p-3 bg-white rounded mx-1">
+      <div>
+        <div class="card">
+          <div class="card-body">
+            <div class="table-responsive text-nowrap">
+              <table class="table table-bordered">
+                <thead>
+                  <tr>
+                    <th *ngFor="let colunm of colunms" scope="col">
+                      <div style="width: 150px">
+                        {{ colunm
+                        }}<span
+                          *ngIf="cssClassDecider(colunm)"
+                          class="required"
+                          >{{ " *" }}</span
+                        >
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let rw of rows; let i = index">
+                    <td>
+                      <div style="font-size: 19px">
+                        <i class="bi bi-trash" (click)="deleteRow()"></i>
+                        <i
+                          class="bi bi-window-stack"
+                          (click)="duplicateRow(i)"
+                        ></i>
+                      </div>
+                    </td>
+                    <td>
+                      <select
+                        class="form-control input-sm"
+                        name="i"
+                        [(ngModel)]="rw.project"
+                        (change)="selectedProject(i)"
+                      >
+                        <option
+                          *ngFor="let project of projects"
+                          [ngValue]="project"
+                        >
+                          {{ project.name }}
+                        </option>
+                      </select>
+                    </td>
+                    <td>
+                      <button
+                        class="btn btn-primary"
+                        type="button"
+                        disabled
+                        style="width: 100%; height: 29px"
+                        *ngIf="rw.project == null"
+                      >
+                        <span
+                          class="spinner-grow spinner-grow-sm"
+                          role="status"
+                          aria-hidden="true"
+                          style="margin-bottom: 13px"
+                        ></span>
+                        <div></div>
+                      </button>
+                      <select
+                        class="form-control input-sm"
+                        name="group"
+                        *ngIf="rw.project != null"
+                        [(ngModel)]="rw.selectGroup"
+                        (change)="selectedGroup(i)"
+                      >
+                        <option
+                          *ngFor="let group of rw.groups"
+                          [ngValue]="group"
+                        >
+                          {{ group }}
+                        </option>
+                      </select>
+                    </td>
+                    <td>
+                      <button
+                        class="btn btn-primary"
+                        type="button"
+                        disabled
+                        style="width: 100%; height: 29px"
+                        *ngIf="rw.selectGroup == null"
+                      >
+                        <span
+                          class="spinner-grow spinner-grow-sm"
+                          role="status"
+                          aria-hidden="true"
+                          style="margin-bottom: 13px"
+                        ></span>
+                        <div></div>
+                      </button>
+                      <select
+                        class="form-control input-sm"
+                        *ngIf="rw.items.length > 0 && rw.selectGroup != null"
+                        name="item"
+                        [(ngModel)]="rw.selectedItem"
+                        (change)="selectedTask(i)"
+                      >
+                        <option *ngFor="let item of rw.items" [ngValue]="item">
+                          {{ item.name }}
+                        </option>
+                      </select>
+                    </td>
+                    <td>
+                      <button
+                        class="btn btn-primary"
+                        type="button"
+                        disabled
+                        style="width: 100%; height: 29px"
+                        *ngIf="isLoadingTask || rw.selectedItem == null"
+                      >
+                        <span
+                          class="spinner-grow spinner-grow-sm"
+                          role="status"
+                          aria-hidden="true"
+                          style="margin-bottom: 13px"
+                        ></span>
+                        <div></div>
+                      </button>
+                      <div *ngIf="!isLoadingTask && rw.selectedItem != null">
+                        {{ rw.estimatedTime }}
+                      </div>
+                    </td>
+                    <td>
+                      <button
+                        class="btn btn-primary"
+                        type="button"
+                        disabled
+                        style="width: 100%; height: 29px"
+                        *ngIf="isLoadingTask || rw.selectedItem == null"
+                      >
+                        <span
+                          class="spinner-grow spinner-grow-sm"
+                          role="status"
+                          aria-hidden="true"
+                          style="margin-bottom: 13px"
+                        ></span>
+                        <div></div>
+                      </button>
+                      <div *ngIf="!isLoadingTask && rw.selectedItem != null">
+                        {{ rw.timeSpentTillDate }}
+                      </div>
+                    </td>
+                    <td>
+                      <button
+                        class="btn btn-primary"
+                        type="button"
+                        disabled
+                        style="width: 100%; height: 29px"
+                        *ngIf="isLoadingTask || rw.selectedItem == null"
+                      >
+                        <span
+                          class="spinner-grow spinner-grow-sm"
+                          role="status"
+                          aria-hidden="true"
+                          style="margin-bottom: 13px"
+                        ></span>
+                        <div></div>
+                      </button>
+                      <div
+                        *ngIf="
+                          rw.items.length > 0 &&
+                          !isLoadingTask &&
+                          rw.selectedItem != null &&
+                          rw.actualActivityType == 'Maintenance at Site'
+                        "
+                      >
+                        {{ rw.actualActivityType }}
+                      </div>
+                      <select
+                        class="form-control input-sm"
+                        name="comments"
+                        *ngIf="
+                          rw.items.length > 0 &&
+                          !isLoadingTask &&
+                          rw.selectedItem != null &&
+                          rw.actualActivityType != 'Maintenance at Site'
+                        "
+                        [(ngModel)]="rw.activityType"
+                      >
+                        <option *ngFor="let act of activityDropDownValues">
+                          {{ act }}
+                        </option>
+                        <option>{{ rw.actualActivityType }}</option>
+                      </select>
+                    </td>
+                    <td
+                      [ngClass]="
+                        rw.labours.length < 1 && error ? 'isRequired' : ''
+                      "
+                    >
+                      <button
+                        class="btn btn-primary"
+                        type="button"
+                        disabled
+                        style="width: 100%; height: 29px"
+                        *ngIf="isLoadingTask || rw.selectedItem == null"
+                      >
+                        <span
+                          class="spinner-grow spinner-grow-sm"
+                          role="status"
+                          aria-hidden="true"
+                          style="margin-bottom: 13px"
+                        ></span>
+                        <div></div>
+                      </button>
+                      <div *ngIf="!isLoadingTask && rw.selectedItem != null">
+                        <i
+                          *ngIf="rw.labours!.length < 1"
+                          class="bi bi-view-stacked"
+                          (click)="copyLabours(i)"
+                        ></i>
+                        <button
+                          *ngIf="rw.labours!.length < 1"
+                          class="btn btn-sm"
+                          (click)="openModal(i)"
+                        >
+                          <span class="bi bi-plus-circle"></span>
+                        </button>
+                        <label *ngFor="let emp of rw.labours">
+                          {{ emp.empObject.name }},
+                        </label>
+                        <label
+                          ><i
+                            class="bi bi-pencil-square"
+                            *ngIf="rw.labours!.length > 0"
+                            (click)="openModal(i)"
+                          ></i
+                        ></label>
+                        <div
+                          style="color: red; font-size: 12px"
+                          *ngIf="rw.labours!.length < 1 && error"
+                        >
+                          Labours is required.
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <button
+                        class="btn btn-primary"
+                        type="button"
+                        disabled
+                        style="width: 100%; height: 29px"
+                        *ngIf="isLoadingTask || rw.selectedItem == null"
+                      >
+                        <span
+                          class="spinner-grow spinner-grow-sm"
+                          role="status"
+                          aria-hidden="true"
+                          style="margin-bottom: 13px"
+                        ></span>
+                        <div></div>
+                      </button>
+                      <div *ngIf="!isLoadingTask && rw.selectedItem != null">
+                        <input
+                          [ngClass]="hour.errors?.['required'] && error?'isRequired':''"
+                          type="number"
+                          min="1"
+                          class="form-control input-sm"
+                          name="manHoursSpent"
+                          [(ngModel)]="rw.manHoursSpent"
+                          (change)="onHoursSpentChange()"
+                          required
+                          #hour="ngModel"
+                        />
+                        <div
+                          style="color: red; font-size: 12px"
+                          *ngIf="rw.manHoursSpent == 0 && error"
+                        >
+                          Hours is required.
+                        </div>
+                      </div>
+                    </td>
+                    <td [ngClass]="{ isFilled: rw.isMaterialFilled }">
+                      <button
+                        class="btn btn-primary"
+                        type="button"
+                        disabled
+                        style="width: 100%; height: 29px"
+                        *ngIf="isLoadingTask || rw.selectedItem == null"
+                      >
+                        <span
+                          class="spinner-grow spinner-grow-sm"
+                          role="status"
+                          aria-hidden="true"
+                          style="margin-bottom: 13px"
+                        ></span>
+                        <div></div>
+                      </button>
+                      <div *ngIf="!isLoadingTask && rw.selectedItem != null">
+                        <button
+                          class="btn btn-sm"
+                          (click)="openMaterialModal = '' + i"
+                        >
+                          <span class="bi bi-plus-circle"></span>
+                        </button>
+                        <app-material-consumed-update
+                          *ngIf="openMaterialModal == '' + i"
+                          [data]="rw.materialDetails"
+                          [activityType]="rw.activityType"
+                          (material)="materialModelAction($event, i)"
+                        ></app-material-consumed-update>
+                        <div
+                          style="color: red; font-size: 12px"
+                          *ngIf="!rw.isMaterialFilled && error"
+                        >
+                          Material Est is required.
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <button
+                        class="btn btn-primary"
+                        type="button"
+                        disabled
+                        style="width: 100%; height: 29px"
+                        *ngIf="isLoadingTask || rw.selectedItem == null"
+                      >
+                        <span
+                          class="spinner-grow spinner-grow-sm"
+                          role="status"
+                          aria-hidden="true"
+                          style="margin-bottom: 13px"
+                        ></span>
+                        <div></div>
+                      </button>
+                      <div
+                        style="
+                          text-align: start;
+                          display: inline-flex;
+                          font-size: smaller;
+                        "
+                        *ngIf="rw.showMarkCompletedCol"
+                      >
+                        <input
+                          *ngIf="!isLoadingTask && rw.selectedItem != null"
+                          type="checkbox"
+                          name="statuscheck"
+                          [(ngModel)]="rw.isStatusCheckBox"
+                        />
+                        <label style="margin: auto">{{
+                          rw.statusCheckBox
+                        }}</label>
+                      </div>
+                    </td>
+                    <td>
+                      <button
+                        class="btn btn-primary"
+                        type="button"
+                        disabled
+                        style="width: 100%; height: 29px"
+                        *ngIf="isLoadingTask || rw.selectedItem == null"
+                      >
+                        <span
+                          class="spinner-grow spinner-grow-sm"
+                          role="status"
+                          aria-hidden="true"
+                          style="margin-bottom: 13px"
+                        ></span>
+                        <div></div>
+                      </button>
+                      <div *ngIf="!isLoadingTask && rw.selectedItem != null">
+                        <input
+                          class="form-control input-sm"
+                          name="comment"
+                          [(ngModel)]="rw.comment"
+                          required
+                          #comment="ngModel"
+                        />
+                        <div
+                          style="color: red; font-size: 12px"
+                          *ngIf="comment.errors?.['required'] && error"
+                        >
+                          Comment is required.
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td>Total Hours Spent</td>
+                    <td>{{ timesheet.totalHoursSpent }}</td>
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+              <button class="btn btn-sm btn-danger" (click)="addRow()">
+                <span class="bi bi-plus-circle"></span>Add New Row</button
+              ><br /><br />
+            </div>
           </div>
         </div>
-    </td>
-    <td><button class="btn btn-primary" type="button" disabled style="width: 100%;
-                height: 29px;" *ngIf="isLoadingTask ||  rw.selectedItem == null">
-                  <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true" style="margin-bottom: 13px;"></span>
-                  <div></div>
-                </button>
-                <div *ngIf=" !isLoadingTask&& rw.selectedItem != null">
-                  <input  [ngClass]="hour.errors?.['required'] && error?'isRequired':''" type="number" min="1" class="form-control input-sm"
-       name="manHoursSpent" [(ngModel)]="rw.manHoursSpent" (change)="onHoursSpentChange()" required #hour="ngModel">
-      <div style="color: red;font-size: 12px;" *ngIf="rw.manHoursSpent == 0 && error">
-        Hours is required.
       </div>
-                </div>
-      
-    </td>
-    <td [ngClass]="{'isFilled' : rw.isMaterialFilled }">
-      <button class="btn btn-primary" type="button" disabled style="width: 100%;
-                height: 29px;" *ngIf="isLoadingTask ||  rw.selectedItem == null">
-                  <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true" style="margin-bottom: 13px;"></span>
-                  <div></div>
-                </button>
-      <div *ngIf=" !isLoadingTask&& rw.selectedItem != null">
-      <button class="btn btn-sm" (click)="openMaterialModal = ''+i"><span class="bi bi-plus-circle"></span></button>
-      <app-material-consumed-update *ngIf="openMaterialModal == ''+i" [data]="rw.materialDetails" 
-      [activityType]="rw.activityType" (material)="materialModelAction($event,i)"></app-material-consumed-update>
-      <div style="color: red;font-size: 12px;" *ngIf="!rw.isMaterialFilled && error">
-        Material Est is required.
+      <div class="d-flex flex-row">
+        <div class="d-flex justify-content-start"></div>
       </div>
-      </div>
-    </td>
-    <td><button class="btn btn-primary" type="button" disabled style="width: 100%;
-                height: 29px;" *ngIf="isLoadingTask ||  rw.selectedItem == null">
-                  <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true" style="margin-bottom: 13px;"></span>
-                  <div></div>
-                </button>
-      <div style="text-align: start;
-      display: inline-flex;
-      font-size: smaller;" *ngIf="rw.showMarkCompletedCol">
-      <input *ngIf=" !isLoadingTask && rw.selectedItem != null"  type="checkbox"  name="statuscheck" [(ngModel)]="rw.isStatusCheckBox">
-      <label style="margin: auto;">{{rw.statusCheckBox}}</label>
-    </div>
-    </td>
-    <td><button class="btn btn-primary" type="button" disabled style="width: 100%;
-                height: 29px;" *ngIf="isLoadingTask ||  rw.selectedItem == null">
-                  <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true" style="margin-bottom: 13px;"></span>
-                  <div></div>
-                </button>
-                <div *ngIf=" !isLoadingTask&& rw.selectedItem != null">
-                  <input  class="form-control input-sm" name="comment" [(ngModel)]="rw.comment" required #comment="ngModel">
-        <div style="color: red;font-size: 12px;" *ngIf="comment.errors?.['required'] && error">
-          Comment is required.
+      <p class="mt-2">Please upload picture of <b>PAPER TIMESHEET</b> here</p>
+      <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+          <input
+            class="form-control input-md"
+            type="file"
+            (change)="onImageSelected($event)"
+            name="file"
+          />
         </div>
-                </div>
-      
-    </td>
-</tr>
-<tr>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td>Total Hours Spent</td>
-            <td>{{timesheet.totalHoursSpent}}</td>
-            <td></td>
-          </tr>
-          </tbody>
-        </table>
-        <button  class="btn btn-sm btn-danger" (click)="addRow()"><span class="bi bi-plus-circle"></span>Add New Row</button><br><br/>
+        <div class="ml-1">
+          <button class="btn btn-sm btn-primary" (click)="onSubmit()">
+            Submit
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-</div>
-  <div class="d-flex flex-row" >
-    <div class="d-flex justify-content-start">
-      
+    <div class="col-lg-2 card shadow p-3 bg-white rounded" style="width: 24%">
+      <h5 class="card-title">Time Validation</h5>
+      <table class="table table-bordered">
+        <tbody>
+          <tr *ngFor="let arr of laboursArray">
+            <td style="text-align: left">{{ arr }}</td>
+            <!-- <td style="text-align: left;">{{timesheet.empAndTime.get(arr) | number : '1.0-2'}}</td> -->
+            <!-- <td style="text-align: left;">{{makeProperTime(timesheet.empAndTime.get(arr)!.toString().replace('.',':'))}}</td> -->
+            <td style="text-align: left">
+              {{ timesheet.empAndTime.get(arr)! }}
+            </td>
+          </tr>
+          <tr>
+            <td style="text-align: left; font-weight: bold">
+              Total Reported Hours (hh.mm)
+            </td>
+            <!-- <td style="text-align: left;">{{makeProperTime(timesheet.totalHoursSpent.toString().replace('.',':'))}}</td> -->
+            <!-- <td style="text-align: left;">{{makeProperTime(timesheet.totalHoursSpent.toString().replace('.',':'))}}</td> -->
+            <td style="text-align: left">{{ timesheet.totalHoursSpent }}</td>
+          </tr>
+          <tr *ngIf="totalShiftHours">
+            <td style="text-align: left; font-weight: bold">
+              Total Shift Hours (hh.mm)
+            </td>
+            <!-- <td style="text-align: left;">{{makeProperTime(totalShiftHours.toString().replace('.',':'))}}</td> -->
+            <td style="text-align: left">{{ totalShiftHours }}</td>
+          </tr>
+          <tr *ngIf="diffInShiftHours">
+            <td style="color: red; text-align: left; font-weight: bold">
+              Difference Hours (hh.mm)
+            </td>
+            <!-- <td style="text-align: left;">{{makeProperTime(diffInShiftHours.toString().replace('.',':'))}}</td> -->
+            <td style="text-align: left">{{ diffInShiftHours }}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
-  <p class="mt-2">Please upload picture of <b>PAPER TIMESHEET</b> here</p>    
-  <div class="d-flex justify-content-between align-items-center">
-    <div class="d-flex align-items-center">
-        <input class="form-control input-md" type="file" (change)="onImageSelected($event)" name="file">
-    </div>
-    <div class="ml-1">
-        <button class="btn btn-sm btn-primary" (click)="onSubmit()">Submit</button>
-    </div>
-</div>
-
-</div>
-<div class="col-lg-2 card shadow p-3  bg-white rounded" style="width: 24%;">
-  <h5 class="card-title">Time Validation</h5>
-  <table class="table table-bordered">
-    <tbody>
-      <tr *ngFor="let arr of laboursArray">
-        <td style="text-align: left;">{{arr}}</td>
-        <!-- <td style="text-align: left;">{{timesheet.empAndTime.get(arr) | number : '1.0-2'}}</td> -->
-        <!-- <td style="text-align: left;">{{makeProperTime(timesheet.empAndTime.get(arr)!.toString().replace('.',':'))}}</td> -->
-        <td style="text-align: left;">{{timesheet.empAndTime.get(arr)!}}</td>
-      </tr>
-      <tr>
-        <td style="text-align: left;font-weight: bold;">Total Reported Hours (hh.mm)</td>
-        <!-- <td style="text-align: left;">{{makeProperTime(timesheet.totalHoursSpent.toString().replace('.',':'))}}</td> -->
-        <!-- <td style="text-align: left;">{{makeProperTime(timesheet.totalHoursSpent.toString().replace('.',':'))}}</td> -->
-        <td style="text-align: left;">{{timesheet.totalHoursSpent}}</td>
-      </tr>
-      <tr *ngIf="totalShiftHours">
-        <td style="text-align: left;font-weight: bold;">Total Shift Hours (hh.mm)</td>
-        <!-- <td style="text-align: left;">{{makeProperTime(totalShiftHours.toString().replace('.',':'))}}</td> -->
-        <td style="text-align: left;">{{totalShiftHours}}</td>
-      </tr>
-      <tr *ngIf="diffInShiftHours">
-        <td style="color: red;text-align: left;font-weight: bold;">Difference Hours (hh.mm)</td>
-        <!-- <td style="text-align: left;">{{makeProperTime(diffInShiftHours.toString().replace('.',':'))}}</td> -->
-        <td style="text-align: left;">{{diffInShiftHours}}</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-</div> 
 </div>
 <app-loader *ngIf="isLoading"></app-loader>
-<app-multi-select-modal *ngIf="isModalOpen" [list]="this.rows[rowIndex].deflautlabours" (onClosed)="onModelClose($event)"></app-multi-select-modal>
+<app-multi-select-modal
+  *ngIf="isModalOpen"
+  [list]="this.rows[rowIndex].deflautlabours"
+  (onClosed)="onModelClose($event)"
+></app-multi-select-modal>
